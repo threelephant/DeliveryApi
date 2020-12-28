@@ -19,7 +19,11 @@ namespace Delivery.Models
         public string MiddleName { get; set; }
         public string LastName { get; set; }
         public string Phone { get; set; }
+        public string Password { get; set; }
+        public int RoleId { get; set; }
+        public Guid Salt { get; set; }
 
+        public virtual Role Role { get; set; }
         public virtual Courier Courier { get; set; }
         public virtual ICollection<Cart> Carts { get; set; }
         public virtual ICollection<Order> Orders { get; set; }

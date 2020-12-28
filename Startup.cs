@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Delivery.Installers;
 using Delivery.Models;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
@@ -27,15 +28,7 @@ namespace Delivery
 
         public void ConfigureServices(IServiceCollection services)
         {
-            services.AddControllers();
-
-            services.AddDbContext<deliveryContext>(options =>
-                options.UseNpgsql(Configuration.GetConnectionString("DefaultConnection")));
-            
-            services.AddSwaggerGen(c =>
-            {
-                c.SwaggerDoc("v1", new OpenApiInfo { Title = "Delivery", Version = "v1" });
-            });
+            services.InstallServicesInAssembly(Configuration);
         }
 
         public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
@@ -51,6 +44,7 @@ namespace Delivery
 
             app.UseRouting();
 
+            app.UseAuthentication();
             app.UseAuthorization();
 
             app.UseEndpoints(endpoints =>

@@ -29,6 +29,7 @@ namespace Delivery.Models
         public virtual DbSet<OrderStatus> OrderStatuses { get; set; }
         public virtual DbSet<Product> Products { get; set; }
         public virtual DbSet<Rating> Ratings { get; set; }
+        public virtual DbSet<Role> Roles { get; set; }
         public virtual DbSet<Store> Stores { get; set; }
         public virtual DbSet<StoreCategory> StoreCategories { get; set; }
         public virtual DbSet<StoreStatus> StoreStatuses { get; set; }
@@ -42,7 +43,8 @@ namespace Delivery.Models
         {
             if (!optionsBuilder.IsConfigured)
             {
-                optionsBuilder.UseNpgsql("Host=localhost;Port=5432;Database=delivery;Username=peter;Password=Aqswde10");
+#warning To protect potentially sensitive information in your connection string, you should move it out of source code. You can avoid scaffolding the connection string by using the Name= syntax to read it from configuration - see https://go.microsoft.com/fwlink/?linkid=2131148. For more guidance on storing connection strings, see http://go.microsoft.com/fwlink/?LinkId=723263.
+                optionsBuilder.UseNpgsql("Host=localhost;Port=5432;Database=delivery;Username=peter;Password=peter");
             }
         }
 
@@ -269,6 +271,16 @@ namespace Delivery.Models
                     .HasConstraintName("ratings_users_login_fk");
             });
 
+            modelBuilder.Entity<Role>(entity =>
+            {
+                entity.HasIndex(e => e.Id, "roles_id_uindex")
+                    .IsUnique();
+
+                entity.Property(e => e.Name)
+                    .IsRequired()
+                    .HasMaxLength(50);
+            });
+
             modelBuilder.Entity<Store>(entity =>
             {
                 entity.Property(e => e.BeginWorking).HasColumnType("time without time zone");
@@ -358,7 +370,17 @@ namespace Delivery.Models
 
                 entity.Property(e => e.MiddleName).HasMaxLength(50);
 
+                entity.Property(e => e.Password)
+                    .IsRequired()
+                    .HasMaxLength(64);
+
                 entity.Property(e => e.Phone).HasMaxLength(25);
+
+                entity.HasOne(d => d.Role)
+                    .WithMany(p => p.Users)
+                    .HasForeignKey(d => d.RoleId)
+                    .OnDelete(DeleteBehavior.SetNull)
+                    .HasConstraintName("users_roles_id_fk");
             });
 
             modelBuilder.Entity<UserAddress>(entity =>
