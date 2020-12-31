@@ -1,7 +1,4 @@
 using System;
-using System.Collections.Generic;
-using System.Diagnostics;
-using AutoMapper;
 using Delivery.Models;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
@@ -21,8 +18,6 @@ namespace Delivery.Installers
                 options.UseNpgsql(configuration.GetConnectionString("DefaultConnection"));
                 options.LogTo(Console.WriteLine);
             });
-
-            services.AddAutoMapper(AppDomain.CurrentDomain.GetAssemblies());
             
             services.AddSwaggerGen(c =>
             {

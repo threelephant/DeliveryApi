@@ -17,10 +17,8 @@ namespace Delivery.Models
         public string Title { get; set; }
         public int? Weight { get; set; }
         public long StoreId { get; set; }
-        public int CurrencyId { get; set; }
         public decimal Price { get; set; }
 
-        public virtual Currency Currency { get; set; }
         public virtual Store Store { get; set; }
         public virtual ICollection<Cart> Carts { get; set; }
         public virtual ICollection<OrderProduct> OrderProducts { get; set; }

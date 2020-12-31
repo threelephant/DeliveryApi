@@ -14,10 +14,14 @@ namespace Delivery.Models
         }
 
         public long Id { get; set; }
-        public long? BuildingId { get; set; }
-        public string ApartmentNumber { get; set; }
+        public long? LocalityId { get; set; }
+        public string Street { get; set; }
+        public string Building { get; set; }
+        public string Apartment { get; set; }
+        public string Entrance { get; set; }
+        public string Level { get; set; }
 
-        public virtual Building Building { get; set; }
+        public virtual Locality Locality { get; set; }
         public virtual ICollection<Store> Stores { get; set; }
         public virtual ICollection<UserAddress> UserAddresses { get; set; }
     }

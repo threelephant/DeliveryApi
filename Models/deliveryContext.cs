@@ -18,11 +18,9 @@ namespace Delivery.Models
         }
 
         public virtual DbSet<Address> Addresses { get; set; }
-        public virtual DbSet<Building> Buildings { get; set; }
         public virtual DbSet<Cart> Carts { get; set; }
         public virtual DbSet<CategoryStore> CategoryStores { get; set; }
         public virtual DbSet<Courier> Couriers { get; set; }
-        public virtual DbSet<Currency> Currencies { get; set; }
         public virtual DbSet<Locality> Localities { get; set; }
         public virtual DbSet<Order> Orders { get; set; }
         public virtual DbSet<OrderProduct> OrderProducts { get; set; }
@@ -33,8 +31,6 @@ namespace Delivery.Models
         public virtual DbSet<Store> Stores { get; set; }
         public virtual DbSet<StoreCategory> StoreCategories { get; set; }
         public virtual DbSet<StoreStatus> StoreStatuses { get; set; }
-        public virtual DbSet<Street> Streets { get; set; }
-        public virtual DbSet<StreetType> StreetTypes { get; set; }
         public virtual DbSet<User> Users { get; set; }
         public virtual DbSet<UserAddress> UserAddresses { get; set; }
         public virtual DbSet<WorkCourierStatus> WorkCourierStatuses { get; set; }
@@ -54,27 +50,25 @@ namespace Delivery.Models
 
             modelBuilder.Entity<Address>(entity =>
             {
-                entity.Property(e => e.ApartmentNumber).HasMaxLength(10);
+                entity.Property(e => e.Apartment).HasMaxLength(10);
 
-                entity.HasOne(d => d.Building)
-                    .WithMany(p => p.Addresses)
-                    .HasForeignKey(d => d.BuildingId)
-                    .OnDelete(DeleteBehavior.Cascade)
-                    .HasConstraintName("addresses_buildings_id_fk");
-            });
-
-            modelBuilder.Entity<Building>(entity =>
-            {
-                entity.HasComment("Здания");
-
-                entity.Property(e => e.BuildingNumber)
+                entity.Property(e => e.Building)
                     .IsRequired()
-                    .HasMaxLength(15);
+                    .HasMaxLength(20);
 
-                entity.HasOne(d => d.Street)
-                    .WithMany(p => p.Buildings)
-                    .HasForeignKey(d => d.StreetId)
-                    .HasConstraintName("address_street_id_fk");
+                entity.Property(e => e.Entrance).HasMaxLength(10);
+
+                entity.Property(e => e.Level).HasMaxLength(4);
+
+                entity.Property(e => e.Street)
+                    .IsRequired()
+                    .HasMaxLength(100);
+
+                entity.HasOne(d => d.Locality)
+                    .WithMany(p => p.Addresses)
+                    .HasForeignKey(d => d.LocalityId)
+                    .OnDelete(DeleteBehavior.Cascade)
+                    .HasConstraintName("addresses_locality_id_fk");
             });
 
             modelBuilder.Entity<Cart>(entity =>
@@ -124,12 +118,6 @@ namespace Delivery.Models
 
                 entity.Property(e => e.Payroll).HasColumnType("money");
 
-                entity.HasOne(d => d.Currency)
-                    .WithMany(p => p.Couriers)
-                    .HasForeignKey(d => d.CurrencyId)
-                    .OnDelete(DeleteBehavior.SetNull)
-                    .HasConstraintName("couriers_currency_id_fk");
-
                 entity.HasOne(d => d.UserLoginNavigation)
                     .WithOne(p => p.Courier)
                     .HasForeignKey<Courier>(d => d.UserLogin)
@@ -140,19 +128,6 @@ namespace Delivery.Models
                     .HasForeignKey(d => d.WorkStatusId)
                     .OnDelete(DeleteBehavior.SetNull)
                     .HasConstraintName("couriers_workcourierstatuses_id_fk");
-            });
-
-            modelBuilder.Entity<Currency>(entity =>
-            {
-                entity.ToTable("Currency");
-
-                entity.Property(e => e.Symbol)
-                    .IsRequired()
-                    .HasMaxLength(10);
-
-                entity.Property(e => e.Title)
-                    .IsRequired()
-                    .HasMaxLength(200);
             });
 
             modelBuilder.Entity<Locality>(entity =>
@@ -237,12 +212,6 @@ namespace Delivery.Models
                     .IsRequired()
                     .HasMaxLength(200);
 
-                entity.HasOne(d => d.Currency)
-                    .WithMany(p => p.Products)
-                    .HasForeignKey(d => d.CurrencyId)
-                    .OnDelete(DeleteBehavior.ClientSetNull)
-                    .HasConstraintName("product_currency_id_fk");
-
                 entity.HasOne(d => d.Store)
                     .WithMany(p => p.Products)
                     .HasForeignKey(d => d.StoreId)
@@ -287,6 +256,10 @@ namespace Delivery.Models
 
                 entity.Property(e => e.EndWorking).HasColumnType("time without time zone");
 
+                entity.Property(e => e.OwnerLogin)
+                    .IsRequired()
+                    .HasMaxLength(25);
+
                 entity.Property(e => e.Title)
                     .IsRequired()
                     .HasMaxLength(150);
@@ -295,6 +268,12 @@ namespace Delivery.Models
                     .WithMany(p => p.Stores)
                     .HasForeignKey(d => d.AddressId)
                     .HasConstraintName("stores_addresses_id_fk");
+
+                entity.HasOne(d => d.OwnerLoginNavigation)
+                    .WithMany(p => p.Stores)
+                    .HasForeignKey(d => d.OwnerLogin)
+                    .OnDelete(DeleteBehavior.SetNull)
+                    .HasConstraintName("stores_users_login_fk");
 
                 entity.HasOne(d => d.StoreStatus)
                     .WithMany(p => p.Stores)
@@ -321,34 +300,6 @@ namespace Delivery.Models
             modelBuilder.Entity<StoreStatus>(entity =>
             {
                 entity.Property(e => e.Name)
-                    .IsRequired()
-                    .HasMaxLength(50);
-            });
-
-            modelBuilder.Entity<Street>(entity =>
-            {
-                entity.ToTable("Street");
-
-                entity.Property(e => e.Name)
-                    .IsRequired()
-                    .HasMaxLength(100);
-
-                entity.HasOne(d => d.Locality)
-                    .WithMany(p => p.Streets)
-                    .HasForeignKey(d => d.LocalityId)
-                    .HasConstraintName("street_locality_id_fk");
-
-                entity.HasOne(d => d.StreetType)
-                    .WithMany(p => p.Streets)
-                    .HasForeignKey(d => d.StreetTypeId)
-                    .HasConstraintName("street_streettype_id_fk");
-            });
-
-            modelBuilder.Entity<StreetType>(entity =>
-            {
-                entity.ToTable("StreetType");
-
-                entity.Property(e => e.Type)
                     .IsRequired()
                     .HasMaxLength(50);
             });

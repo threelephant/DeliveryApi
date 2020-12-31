@@ -19,8 +19,10 @@ namespace Delivery.Models
         public TimeSpan? BeginWorking { get; set; }
         public TimeSpan? EndWorking { get; set; }
         public int StoreStatusId { get; set; }
+        public string OwnerLogin { get; set; }
 
         public virtual Address Address { get; set; }
+        public virtual User OwnerLoginNavigation { get; set; }
         public virtual StoreStatus StoreStatus { get; set; }
         public virtual ICollection<Order> Orders { get; set; }
         public virtual ICollection<Product> Products { get; set; }

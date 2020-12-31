@@ -9,12 +9,12 @@ namespace Delivery.Models
     {
         public Locality()
         {
-            Streets = new HashSet<Street>();
+            Addresses = new HashSet<Address>();
         }
 
         public long Id { get; set; }
         public string Name { get; set; }
 
-        public virtual ICollection<Street> Streets { get; set; }
+        public virtual ICollection<Address> Addresses { get; set; }
     }
 }

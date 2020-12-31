@@ -16,11 +16,9 @@ namespace Delivery.Models
         public DateTime DateWorkBegin { get; set; }
         public int CitizenshipId { get; set; }
         public string PassportNumber { get; set; }
-        public int CurrencyId { get; set; }
         public decimal Payroll { get; set; }
         public int WorkStatusId { get; set; }
 
-        public virtual Currency Currency { get; set; }
         public virtual User UserLoginNavigation { get; set; }
         public virtual WorkCourierStatus WorkStatus { get; set; }
         public virtual ICollection<Order> Orders { get; set; }

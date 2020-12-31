@@ -11,6 +11,7 @@ namespace Delivery.Models
         {
             Carts = new HashSet<Cart>();
             Orders = new HashSet<Order>();
+            Stores = new HashSet<Store>();
             UserAddresses = new HashSet<UserAddress>();
         }
 
@@ -27,6 +28,7 @@ namespace Delivery.Models
         public virtual Courier Courier { get; set; }
         public virtual ICollection<Cart> Carts { get; set; }
         public virtual ICollection<Order> Orders { get; set; }
+        public virtual ICollection<Store> Stores { get; set; }
         public virtual ICollection<UserAddress> UserAddresses { get; set; }
     }
 }
