@@ -1,4 +1,3 @@
-using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -10,7 +9,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Delivery.Controllers
 {
-    // [Authorize]
+    [Authorize]
     [ApiController]
     [Route("users")]
     public class UserController : ControllerBase
@@ -24,10 +23,10 @@ namespace Delivery.Controllers
         [HttpGet("{login}")]
         public async Task<IActionResult> GetUser(string login)
         {
-            // if (login != User.Identity?.Name)
-            // {
-            //     return Unauthorized();
-            // }
+            if (login != User.Identity?.Name)
+            {
+                return Unauthorized();
+            }
 
             var userAddresses = from user in db.Users
                 join userAddress in db.UserAddresses on user.Login equals userAddress.UserLogin
@@ -70,10 +69,10 @@ namespace Delivery.Controllers
         [HttpPut("{login}")]
         public async Task<IActionResult> ChangeUser([FromRoute] string login, [FromBody] UserInfo userInfo)
         {
-            // if (login != User.Identity?.Name)
-            // {
-            //     return Unauthorized();
-            // }
+            if (login != User.Identity?.Name)
+            {
+                return Unauthorized();
+            }
             
             var changedUser = await db.Users.FirstOrDefaultAsync(u => u.Login == login);
             changedUser.FirstName = userInfo.name.first_name;
@@ -81,16 +80,7 @@ namespace Delivery.Controllers
             changedUser.MiddleName = userInfo.name.middle_name;
             changedUser.Phone = userInfo.phone;
 
-            await db.SaveChangesAsync();
-
-            var addresses = userInfo.addresses
-                .OrderBy(ua => ua.locality)
-                .ThenBy(ua => ua.street)
-                .ThenBy(ua => ua.building)
-                .ThenBy(ua => ua.apartment)
-                .ThenBy(ua => ua.entrance)
-                .ThenBy(ua => ua.level)
-                .ToList();
+            var addresses = userInfo.addresses.ToList();
             
             var currentAddresses = await (from user in db.Users
                 join userAddress in db.UserAddresses on user.Login equals userAddress.UserLogin
@@ -105,71 +95,84 @@ namespace Delivery.Controllers
                     apartment = address.Apartment,
                     entrance = address.Entrance,
                     level = address.Level
-                })
-                .OrderBy(ua => ua.locality)
-                .ThenBy(ua => ua.street)
-                .ThenBy(ua => ua.building)
-                .ThenBy(ua => ua.apartment)
-                .ThenBy(ua => ua.entrance)
-                .ThenBy(ua => ua.level)
-                .ToListAsync();
+                }).ToListAsync();
 
-            if (addresses.SequenceEqual(currentAddresses))
+            var newUserAddresses = addresses.Where(a => 
+                !currentAddresses.Contains(a)).ToList();
+            var oldUserAddresses = currentAddresses.Where(a =>
+                !addresses.Contains(a)).ToList();
+
+            var newAddresses = (from userAddress in newUserAddresses 
+                let address = db.Addresses.FirstOrDefault(a => 
+                    a.Locality.Name == userAddress.locality 
+                    && a.Street == userAddress.street 
+                    && a.Building == userAddress.building 
+                    && a.Apartment == userAddress.apartment 
+                    && a.Entrance == userAddress.entrance 
+                    && a.Level == userAddress.level
+                    ) 
+                where address == null select userAddress).ToList();
+            
+            var newAddr = newAddresses.Select(a => new Address
             {
-                return Ok(new { message = "Same addresses" });
+                LocalityId = db.Localities.FirstOrDefault(l => l.Name == a.locality)?.Id,
+                Street = a.street,
+                Building = a.building,
+                Apartment = a.apartment,
+                Entrance = a.entrance,
+                Level = a.level
+            });
+
+            await db.Addresses.AddRangeAsync(newAddr);
+            await db.SaveChangesAsync();
+            
+            List<UserAddress> GetUserAddrs(IEnumerable<UserAddresses> userAddressesList)
+            {
+                var newUserAddrs = userAddressesList.Select(userAddress =>
+                        db.Addresses.FirstOrDefault(a =>
+                            a.Locality.Name == userAddress.locality
+                            && a.Street == userAddress.street
+                            && a.Building == userAddress.building
+                            && a.Apartment == userAddress.apartment
+                            && a.Entrance == userAddress.entrance
+                            && a.Level == userAddress.level))
+                    .Where(a => a != null)
+                    .Select(addr => new UserAddress
+                    {
+                        AddressId = addr.Id,
+                        UserLogin = login
+                    }).ToList();
+                
+                return newUserAddrs;
+            }
+            
+            var newUserAddrs = GetUserAddrs(newUserAddresses);
+            var oldUserAddrs = GetUserAddrs(oldUserAddresses);
+            
+            await db.UserAddresses.AddRangeAsync(newUserAddrs);
+            db.UserAddresses.RemoveRange(oldUserAddrs);
+            await db.SaveChangesAsync();
+            
+            return Ok(new { newUserAddresses, oldUserAddresses, newAddresses });
+        }
+
+        [HttpDelete("{login}")]
+        public async Task<IActionResult> DeleteUser(string login)
+        {
+            if (login != User.Identity?.Name)
+            {
+                return Unauthorized();
             }
 
-            // var intersectAddresses = addresses.Intersect(currentAddresses);
-            // var unionAddresses = addresses.Union(currentAddresses);
+            var user = db.Users.FirstOrDefault(u => u.Login == login);
+            if (user != null)
+            {
+                db.Users.Remove(user);   
+            }
+            await db.SaveChangesAsync();
             
-            var exceptAddresses = addresses.Except(currentAddresses);
-
-            // foreach (var address in addresses) // Адреса из запроса
-            // {
-            //     IEnumerable<UserAddresses> ua = null;
-            //     foreach (var currentAddress in currentAddresses) // Текущие адреса пользователя
-            //     {
-            //         if (currentAddress.Equals(address)) // Если адрес есть, то пропускаем
-            //         {
-            //             continue;
-            //         }
-            //         
-            //         var addressCheck = new Address
-            //         {
-            //             LocalityId = (await db.Localities.FirstOrDefaultAsync(l => l.Name == address.locality)).Id,
-            //             Street = address.street,
-            //             Building = address.building,
-            //             Apartment = address.apartment,
-            //             Entrance = address.entrance,
-            //             Level = address.level
-            //         };
-            //         
-            //         var check = await db.Addresses.FirstOrDefaultAsync(a => // Ищем адрес с теми же данными
-            //             a.LocalityId == addressCheck.LocalityId
-            //             && a.Street == addressCheck.Street
-            //             && a.Building == addressCheck.Building
-            //             && a.Apartment == addressCheck.Apartment
-            //             && a.Entrance == addressCheck.Entrance
-            //             && a.Level == addressCheck.Level);
-            //     }
-            //     
-            //         // if (check == null)
-            //         // {
-            //         //     await db.Addresses.AddAsync(addressCheck);
-            //         // }
-            //         //
-            //         // await db.UserAddresses.AddAsync(new UserAddress
-            //         // {
-            //         //     UserLogin = login,
-            //         //     Address = addressCheck
-            //         // });
-            //         //
-            //         // break;
-            // }
-
-            // await db.SaveChangesAsync();
-
-            return Ok(new {  exceptAddresses });
+            
+            return NoContent();
         }
     }
 }

@@ -1,7 +1,5 @@
 using System.Collections.Generic;
 
-#nullable enable
-
 namespace Delivery.Dto
 {
     public class UserAddresses
