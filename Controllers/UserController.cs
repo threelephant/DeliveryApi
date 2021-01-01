@@ -153,7 +153,7 @@ namespace Delivery.Controllers
             db.UserAddresses.RemoveRange(oldUserAddrs);
             await db.SaveChangesAsync();
             
-            return Ok(new { newUserAddresses, oldUserAddresses, newAddresses });
+            return Ok();
         }
 
         [HttpDelete("{login}")]

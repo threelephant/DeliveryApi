@@ -105,16 +105,20 @@ namespace Delivery.Models
                 entity.HasKey(e => e.UserLogin)
                     .HasName("couriers_pk");
 
-                entity.HasIndex(e => new { e.CitizenshipId, e.PassportNumber }, "couriers_citizenshipid_passportnumber_uindex")
+                entity.HasIndex(e => new { e.Citizenship, e.PassportNumber }, "couriers_citizenshipid_passportnumber_uindex")
                     .IsUnique();
 
                 entity.Property(e => e.UserLogin).HasMaxLength(25);
 
                 entity.Property(e => e.DateWorkBegin).HasColumnType("date");
 
+                entity.Property(e => e.Citizenship).IsRequired().HasMaxLength(50);
+
                 entity.Property(e => e.PassportNumber)
                     .IsRequired()
                     .HasMaxLength(35);
+
+                entity.Property(e => e.Birth).HasColumnType("date");
 
                 entity.Property(e => e.Payroll).HasColumnType("money");
 
