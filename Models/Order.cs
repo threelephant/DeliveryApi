@@ -20,6 +20,7 @@ namespace Delivery.Models
         public DateTime? TakingDate { get; set; }
         public DateTime? DeliveryDate { get; set; }
         public string CourierLogin { get; set; }
+        public short? Rating { get; set; }
 
         public virtual Courier CourierLoginNavigation { get; set; }
         public virtual OrderStatus Status { get; set; }

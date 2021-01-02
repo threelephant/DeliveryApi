@@ -3,15 +3,17 @@ using System;
 using Delivery.Models;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
 namespace Delivery.Migrations
 {
     [DbContext(typeof(deliveryContext))]
-    partial class deliveryContextModelSnapshot : ModelSnapshot
+    [Migration("20210102154911_AddOrderRating")]
+    partial class AddOrderRating
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -54,7 +56,7 @@ namespace Delivery.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex(new[] { "LocalityId" }, "IX_Addresses_LocalityId");
+                    b.HasIndex("LocalityId");
 
                     b.ToTable("Addresses");
                 });
@@ -74,7 +76,7 @@ namespace Delivery.Migrations
                     b.HasKey("UserLogin", "ProductId")
                         .HasName("cart_pk");
 
-                    b.HasIndex(new[] { "ProductId" }, "IX_Cart_ProductId");
+                    b.HasIndex("ProductId");
 
                     b.ToTable("Cart");
                 });
@@ -107,10 +109,8 @@ namespace Delivery.Migrations
 
                     b.Property<string>("Citizenship")
                         .IsRequired()
-                        .ValueGeneratedOnAdd()
                         .HasMaxLength(50)
-                        .HasColumnType("character varying(50)")
-                        .HasDefaultValueSql("''::character varying");
+                        .HasColumnType("character varying(50)");
 
                     b.Property<DateTime>("DateWorkBegin")
                         .HasColumnType("date");
@@ -129,7 +129,7 @@ namespace Delivery.Migrations
                     b.HasKey("UserLogin")
                         .HasName("couriers_pk");
 
-                    b.HasIndex(new[] { "WorkStatusId" }, "IX_Couriers_WorkStatusId");
+                    b.HasIndex("WorkStatusId");
 
                     b.HasIndex(new[] { "Citizenship", "PassportNumber" }, "couriers_citizenshipid_passportnumber_uindex")
                         .IsUnique();
@@ -162,8 +162,7 @@ namespace Delivery.Migrations
                     b.Property<long>("Id")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("bigint")
-                        .UseIdentityByDefaultColumn()
-                        .HasIdentityOptions(null, null, null, 2147483647L, null, null);
+                        .UseIdentityByDefaultColumn();
 
                     b.Property<string>("CourierLogin")
                         .HasMaxLength(25)
@@ -175,7 +174,7 @@ namespace Delivery.Migrations
                     b.Property<DateTime>("OrderDate")
                         .HasColumnType("timestamp without time zone");
 
-                    b.Property<short?>("Rating")
+                    b.Property<short>("Rating")
                         .HasColumnType("smallint");
 
                     b.Property<int>("StatusId")
@@ -194,13 +193,13 @@ namespace Delivery.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex(new[] { "CourierLogin" }, "IX_Order_CourierLogin");
+                    b.HasIndex("CourierLogin");
 
-                    b.HasIndex(new[] { "StatusId" }, "IX_Order_StatusId");
+                    b.HasIndex("StatusId");
 
-                    b.HasIndex(new[] { "StoreId" }, "IX_Order_StoreId");
+                    b.HasIndex("StoreId");
 
-                    b.HasIndex(new[] { "UserLogin" }, "IX_Order_UserLogin");
+                    b.HasIndex("UserLogin");
 
                     b.ToTable("Order");
                 });
@@ -219,7 +218,7 @@ namespace Delivery.Migrations
                     b.HasKey("OrderId", "ProductId")
                         .HasName("orderproducts_pk");
 
-                    b.HasIndex(new[] { "ProductId" }, "IX_OrderProducts_ProductId");
+                    b.HasIndex("ProductId");
 
                     b.ToTable("OrderProducts");
                 });
@@ -267,7 +266,7 @@ namespace Delivery.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex(new[] { "StoreId" }, "IX_Product_StoreId");
+                    b.HasIndex("StoreId");
 
                     b.ToTable("Product");
                 });
@@ -286,9 +285,9 @@ namespace Delivery.Migrations
                         .HasMaxLength(25)
                         .HasColumnType("character varying(25)");
 
-                    b.HasIndex(new[] { "StoreId" }, "IX_Ratings_StoreId");
+                    b.HasIndex("StoreId");
 
-                    b.HasIndex(new[] { "UserLogin" }, "IX_Ratings_UserLogin");
+                    b.HasIndex("UserLogin");
 
                     b.ToTable("Ratings");
                 });
@@ -344,11 +343,11 @@ namespace Delivery.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex(new[] { "AddressId" }, "IX_Stores_AddressId");
+                    b.HasIndex("AddressId");
 
-                    b.HasIndex(new[] { "OwnerLogin" }, "IX_Stores_OwnerLogin");
+                    b.HasIndex("OwnerLogin");
 
-                    b.HasIndex(new[] { "StoreStatusId" }, "IX_Stores_StoreStatusId");
+                    b.HasIndex("StoreStatusId");
 
                     b.ToTable("Stores");
                 });
@@ -361,9 +360,9 @@ namespace Delivery.Migrations
                     b.Property<long>("StoreId")
                         .HasColumnType("bigint");
 
-                    b.HasIndex(new[] { "CategoryId" }, "IX_StoreCategories_CategoryId");
+                    b.HasIndex("CategoryId");
 
-                    b.HasIndex(new[] { "StoreId" }, "IX_StoreCategories_StoreId");
+                    b.HasIndex("StoreId");
 
                     b.ToTable("StoreCategories");
                 });
@@ -422,7 +421,7 @@ namespace Delivery.Migrations
                     b.HasKey("Login")
                         .HasName("users_pk");
 
-                    b.HasIndex(new[] { "RoleId" }, "IX_Users_RoleId");
+                    b.HasIndex("RoleId");
 
                     b.ToTable("Users");
 
@@ -442,7 +441,7 @@ namespace Delivery.Migrations
                     b.HasKey("UserLogin", "AddressId")
                         .HasName("useraddress_pk");
 
-                    b.HasIndex(new[] { "AddressId" }, "IX_UserAddress_AddressId");
+                    b.HasIndex("AddressId");
 
                     b.ToTable("UserAddress");
                 });

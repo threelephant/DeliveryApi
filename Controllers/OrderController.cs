@@ -1,7 +1,9 @@
 using System;
+using System.Linq;
 using System.Threading.Tasks;
 using Delivery.Models;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 
 namespace Delivery.Controllers
 {
@@ -18,13 +20,60 @@ namespace Delivery.Controllers
         [HttpGet("{id}")]
         public async Task<IActionResult> GetOrder([FromRoute] long id)
         {
-            throw new NotImplementedException();
+            var order = await db.Orders
+                .Include(o => o.Store)
+                .Include(o => o.Status)
+                .FirstOrDefaultAsync(o => o.Id == id);
+
+            if (order == null)
+            {
+                return NotFound();
+            }
+            
+            var products = db.OrderProducts
+                .Where(p => p.OrderId == id)
+                .Select(p => new
+                {
+                    id = p.ProductId,
+                    title = p.Product.Title,
+                    price = p.Product.Price,
+                    weight = p.Product.Weight,
+                    count = p.Count
+                }).AsEnumerable();
+            
+            var response = new
+            {
+                store_title = order.Store.Title,
+                order_status = order.Status.Name,
+                date_order = order.OrderDate,
+                date_taking = order.TakingDate,
+                date_delivery = order.DeliveryDate,
+                products
+            };
+            
+            return Ok(response);
         }
         
         [HttpGet("{id}/status")]
         public async Task<IActionResult> GetOrderStatus([FromRoute] long id)
         {
-            throw new NotImplementedException();
+            var order = await db.Orders
+                .Include(o => o.Store)
+                .Include(o => o.Status)
+                .FirstOrDefaultAsync(o => o.Id == id);
+            
+            if (order == null)
+            {
+                return NotFound();
+            }
+
+            var response = new
+            {
+                store_title = order.Store.Title,
+                status = order.Status.Name
+            };
+
+            return Ok(response);
         }
         
         [HttpPost("{id}/rate")]

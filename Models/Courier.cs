@@ -14,11 +14,11 @@ namespace Delivery.Models
 
         public string UserLogin { get; set; }
         public DateTime DateWorkBegin { get; set; }
-        public string Citizenship { get; set; }
         public string PassportNumber { get; set; }
-        public DateTime Birth { get; set; }
         public decimal Payroll { get; set; }
         public int WorkStatusId { get; set; }
+        public string Citizenship { get; set; }
+        public DateTime Birth { get; set; }
 
         public virtual User UserLoginNavigation { get; set; }
         public virtual WorkCourierStatus WorkStatus { get; set; }

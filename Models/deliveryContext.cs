@@ -50,6 +50,8 @@ namespace Delivery.Models
 
             modelBuilder.Entity<Address>(entity =>
             {
+                entity.HasIndex(e => e.LocalityId, "IX_Addresses_LocalityId");
+
                 entity.Property(e => e.Apartment).HasMaxLength(10);
 
                 entity.Property(e => e.Building)
@@ -78,6 +80,8 @@ namespace Delivery.Models
 
                 entity.ToTable("Cart");
 
+                entity.HasIndex(e => e.ProductId, "IX_Cart_ProductId");
+
                 entity.Property(e => e.UserLogin).HasMaxLength(25);
 
                 entity.HasOne(d => d.Product)
@@ -105,20 +109,25 @@ namespace Delivery.Models
                 entity.HasKey(e => e.UserLogin)
                     .HasName("couriers_pk");
 
+                entity.HasIndex(e => e.WorkStatusId, "IX_Couriers_WorkStatusId");
+
                 entity.HasIndex(e => new { e.Citizenship, e.PassportNumber }, "couriers_citizenshipid_passportnumber_uindex")
                     .IsUnique();
 
                 entity.Property(e => e.UserLogin).HasMaxLength(25);
 
-                entity.Property(e => e.DateWorkBegin).HasColumnType("date");
+                entity.Property(e => e.Birth).HasColumnType("date");
 
-                entity.Property(e => e.Citizenship).IsRequired().HasMaxLength(50);
+                entity.Property(e => e.Citizenship)
+                    .IsRequired()
+                    .HasMaxLength(50)
+                    .HasDefaultValueSql("''::character varying");
+
+                entity.Property(e => e.DateWorkBegin).HasColumnType("date");
 
                 entity.Property(e => e.PassportNumber)
                     .IsRequired()
                     .HasMaxLength(35);
-
-                entity.Property(e => e.Birth).HasColumnType("date");
 
                 entity.Property(e => e.Payroll).HasColumnType("money");
 
@@ -148,6 +157,16 @@ namespace Delivery.Models
             modelBuilder.Entity<Order>(entity =>
             {
                 entity.ToTable("Order");
+
+                entity.HasIndex(e => e.CourierLogin, "IX_Order_CourierLogin");
+
+                entity.HasIndex(e => e.StatusId, "IX_Order_StatusId");
+
+                entity.HasIndex(e => e.StoreId, "IX_Order_StoreId");
+
+                entity.HasIndex(e => e.UserLogin, "IX_Order_UserLogin");
+
+                entity.Property(e => e.Id).HasIdentityOptions(null, null, null, 2147483647L, null, null);
 
                 entity.Property(e => e.CourierLogin).HasMaxLength(25);
 
@@ -185,6 +204,8 @@ namespace Delivery.Models
                 entity.HasKey(e => new { e.OrderId, e.ProductId })
                     .HasName("orderproducts_pk");
 
+                entity.HasIndex(e => e.ProductId, "IX_OrderProducts_ProductId");
+
                 entity.HasOne(d => d.Order)
                     .WithMany(p => p.OrderProducts)
                     .HasForeignKey(d => d.OrderId)
@@ -210,6 +231,8 @@ namespace Delivery.Models
             {
                 entity.ToTable("Product");
 
+                entity.HasIndex(e => e.StoreId, "IX_Product_StoreId");
+
                 entity.Property(e => e.Price).HasColumnType("money");
 
                 entity.Property(e => e.Title)
@@ -225,6 +248,10 @@ namespace Delivery.Models
             modelBuilder.Entity<Rating>(entity =>
             {
                 entity.HasNoKey();
+
+                entity.HasIndex(e => e.StoreId, "IX_Ratings_StoreId");
+
+                entity.HasIndex(e => e.UserLogin, "IX_Ratings_UserLogin");
 
                 entity.Property(e => e.Rating1).HasColumnName("Rating");
 
@@ -256,6 +283,12 @@ namespace Delivery.Models
 
             modelBuilder.Entity<Store>(entity =>
             {
+                entity.HasIndex(e => e.AddressId, "IX_Stores_AddressId");
+
+                entity.HasIndex(e => e.OwnerLogin, "IX_Stores_OwnerLogin");
+
+                entity.HasIndex(e => e.StoreStatusId, "IX_Stores_StoreStatusId");
+
                 entity.Property(e => e.BeginWorking).HasColumnType("time without time zone");
 
                 entity.Property(e => e.EndWorking).HasColumnType("time without time zone");
@@ -290,6 +323,10 @@ namespace Delivery.Models
             {
                 entity.HasNoKey();
 
+                entity.HasIndex(e => e.CategoryId, "IX_StoreCategories_CategoryId");
+
+                entity.HasIndex(e => e.StoreId, "IX_StoreCategories_StoreId");
+
                 entity.HasOne(d => d.Category)
                     .WithMany()
                     .HasForeignKey(d => d.CategoryId)
@@ -314,6 +351,8 @@ namespace Delivery.Models
                     .HasName("users_pk");
 
                 entity.HasComment("Пользователи системы");
+
+                entity.HasIndex(e => e.RoleId, "IX_Users_RoleId");
 
                 entity.Property(e => e.Login).HasMaxLength(25);
 
@@ -344,6 +383,8 @@ namespace Delivery.Models
                     .HasName("useraddress_pk");
 
                 entity.ToTable("UserAddress");
+
+                entity.HasIndex(e => e.AddressId, "IX_UserAddress_AddressId");
 
                 entity.Property(e => e.UserLogin).HasMaxLength(25);
 

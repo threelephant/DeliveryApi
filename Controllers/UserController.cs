@@ -10,7 +10,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Delivery.Controllers
 {
-    [Authorize]
+    // [Authorize]
     [ApiController]
     [Route("users")]
     public class UserController : ControllerBase
@@ -183,7 +183,19 @@ namespace Delivery.Controllers
         [HttpGet("{login}/cart")]
         public async Task<IActionResult> GetCart([FromRoute] string login)
         {
-            throw new NotImplementedException();
+            var response = db.Carts
+                .Where(c => c.UserLogin == login)
+                .Select(c => new
+                {
+                    id = c.Product.Id,
+                    title = c.Product.Title,
+                    price = c.Product.Price,
+                    weight = c.Product.Weight,
+                    count = c.Count,
+                    store_title = c.Product.Store.Title
+                });
+
+            return Ok(response);
         }
         
         //TODO: Add body request
