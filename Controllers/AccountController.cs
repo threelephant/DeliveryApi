@@ -91,7 +91,7 @@ namespace Delivery.Controllers
 
             var token = GetToken(newUser);
 
-            return Ok(new { username = username, token = token });
+            return Ok(new { username, token });
         }
 
         private string GetToken(User user)
@@ -113,7 +113,7 @@ namespace Delivery.Controllers
             return encodedJwt;
         }
 
-        private ClaimsIdentity GetIdentity(User user)
+        private static ClaimsIdentity GetIdentity(User user)
         {
             var claims = new List<Claim>
             {

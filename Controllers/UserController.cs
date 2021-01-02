@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -80,6 +81,8 @@ namespace Delivery.Controllers
             changedUser.MiddleName = userInfo.name.middle_name;
             changedUser.Phone = userInfo.phone;
 
+            await db.SaveChangesAsync();
+
             var addresses = userInfo.addresses.ToList();
             
             var currentAddresses = await (from user in db.Users
@@ -102,16 +105,17 @@ namespace Delivery.Controllers
             var oldUserAddresses = currentAddresses.Where(a =>
                 !addresses.Contains(a)).ToList();
 
-            var newAddresses = (from userAddress in newUserAddresses 
-                let address = db.Addresses.FirstOrDefault(a => 
-                    a.Locality.Name == userAddress.locality 
-                    && a.Street == userAddress.street 
-                    && a.Building == userAddress.building 
-                    && a.Apartment == userAddress.apartment 
-                    && a.Entrance == userAddress.entrance 
+            var newAddresses = (from userAddress in newUserAddresses
+                let address = db.Addresses.FirstOrDefault(a =>
+                    a.Locality.Name == userAddress.locality
+                    && a.Street == userAddress.street
+                    && a.Building == userAddress.building
+                    && a.Apartment == userAddress.apartment
+                    && a.Entrance == userAddress.entrance
                     && a.Level == userAddress.level
-                    ) 
-                where address == null select userAddress).ToList();
+                )
+                where address == null
+                select userAddress);
             
             var newAddr = newAddresses.Select(a => new Address
             {
@@ -126,7 +130,7 @@ namespace Delivery.Controllers
             await db.Addresses.AddRangeAsync(newAddr);
             await db.SaveChangesAsync();
             
-            List<UserAddress> GetUserAddrs(IEnumerable<UserAddresses> userAddressesList)
+            IEnumerable<UserAddress> GetUserAddrs(IEnumerable<UserAddresses> userAddressesList)
             {
                 var newUserAddrs = userAddressesList.Select(userAddress =>
                         db.Addresses.FirstOrDefault(a =>
@@ -141,7 +145,7 @@ namespace Delivery.Controllers
                     {
                         AddressId = addr.Id,
                         UserLogin = login
-                    }).ToList();
+                    });
                 
                 return newUserAddrs;
             }
@@ -156,6 +160,7 @@ namespace Delivery.Controllers
             return Ok();
         }
 
+        //TODO: Выйти из аккаунта перед удалением
         [HttpDelete("{login}")]
         public async Task<IActionResult> DeleteUser(string login)
         {
@@ -173,6 +178,26 @@ namespace Delivery.Controllers
             
             
             return NoContent();
+        }
+        
+        [HttpGet("{login}/cart")]
+        public async Task<IActionResult> GetCart([FromRoute] string login)
+        {
+            throw new NotImplementedException();
+        }
+        
+        //TODO: Add body request
+        [HttpPost("{login}/cart")]
+        public async Task<IActionResult> SaveCart([FromRoute] string login)
+        {
+            throw new NotImplementedException();
+        }
+        
+        //TODO: Add body request
+        [HttpPut("{login}/cart")]
+        public async Task<IActionResult> ChangeCart([FromRoute] string login)
+        {
+            throw new NotImplementedException();
         }
     }
 }

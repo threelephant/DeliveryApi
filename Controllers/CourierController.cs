@@ -45,7 +45,7 @@ namespace Delivery.Controllers
             return Ok(result);
         }
 
-        [HttpPost("{login}/work")]
+        [HttpPost("{login}")]
         public async Task<IActionResult> AddCourier([FromRoute] string login, [FromBody] CourierRequest courierRequest)
         {
             var courier = new Courier
@@ -62,6 +62,42 @@ namespace Delivery.Controllers
             await db.SaveChangesAsync();
 
             return Created(new Uri($"/courier/{login}"), new {});
+        }
+
+        [HttpPut("{login}")]
+        public async Task<IActionResult> ChangeCourier([FromRoute] string login, [FromBody] CourierRequest courierRequest)
+        {
+            throw new NotImplementedException();
+        }
+        
+        [HttpDelete("{login}")]
+        public async Task<IActionResult> DeleteCourier([FromRoute] string login, [FromBody] CourierRequest courierRequest)
+        {
+            throw new NotImplementedException();
+        }
+
+        [HttpGet("{login}/work")]
+        public async Task<IActionResult> GetWorkStatus([FromRoute] string login)
+        {
+            throw new NotImplementedException();
+        }
+        
+        [HttpGet("locality/{title}")]
+        public async Task<IActionResult> GetOrdersInLocality([FromRoute] string title, [FromRoute] string order)
+        {
+            throw new NotImplementedException();
+        }
+        
+        [HttpGet("order/{id}")]
+        public async Task<IActionResult> GetOrderInfo([FromRoute] long id)
+        {
+            throw new NotImplementedException();
+        }
+        
+        [HttpPut("order/{id}")]
+        public async Task<IActionResult> ChangeOrderStatus([FromRoute] long id)
+        {
+            throw new NotImplementedException();
         }
     }
 }
