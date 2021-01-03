@@ -55,6 +55,22 @@ namespace Delivery.Controllers
             
             return Ok(response);
         }
+
+        [HttpGet]
+        public async Task<IActionResult> GetOrders()
+        {
+            var order = await db.Orders
+                .Where(o => o.UserLogin == User.Identity.Name)
+                .Select(o => new
+                {
+                    id = o.Id,
+                    store_title = o.Store.Title,
+                    order_status = o.Status.Name
+                })
+                .ToListAsync();
+
+            return Ok(order);
+        }
         
         [HttpGet("{id}/status")]
         public async Task<IActionResult> GetOrderStatus([FromRoute] long id)
@@ -102,8 +118,8 @@ namespace Delivery.Controllers
             return Ok();
         }
 
-        [HttpPost("new")]
-        public async Task<IActionResult> ConfirmOrder()
+        [HttpPost("new/{addressId}")]
+        public async Task<IActionResult> ConfirmOrder(long addressId)
         {
             var userCart = db.Carts
                 .Include(c => c.Product)
@@ -122,7 +138,8 @@ namespace Delivery.Controllers
                     UserLogin = User.Identity.Name,
                     StoreId = store.Id,
                     StatusId = db.OrderStatuses.FirstOrDefault(s => s.Name == "Пользователь подал заказ").Id,
-                    OrderDate = DateTime.Now
+                    OrderDate = DateTime.Now,
+                    AddressId = addressId
                 };
 
                 await db.Orders.AddAsync(newOrder);

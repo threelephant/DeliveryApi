@@ -11,6 +11,7 @@ namespace Delivery.Models
         {
             Stores = new HashSet<Store>();
             UserAddresses = new HashSet<UserAddress>();
+            Orders = new HashSet<Order>();
         }
 
         public long Id { get; set; }
@@ -24,5 +25,6 @@ namespace Delivery.Models
         public virtual Locality Locality { get; set; }
         public virtual ICollection<Store> Stores { get; set; }
         public virtual ICollection<UserAddress> UserAddresses { get; set; }
+        public virtual ICollection<Order> Orders { get; set; }
     }
 }

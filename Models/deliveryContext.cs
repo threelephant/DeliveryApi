@@ -166,6 +166,8 @@ namespace Delivery.Models
 
                 entity.HasIndex(e => e.UserLogin, "IX_Order_UserLogin");
 
+                entity.HasIndex(e => e.AddressId, "IX_Order_AddressId");
+
                 entity.Property(e => e.Id).HasIdentityOptions(null, null, null, 2147483647L, null, null);
 
                 entity.Property(e => e.CourierLogin).HasMaxLength(25);
@@ -197,6 +199,12 @@ namespace Delivery.Models
                     .HasForeignKey(d => d.UserLogin)
                     .OnDelete(DeleteBehavior.SetNull)
                     .HasConstraintName("order_users_login_fk");
+
+                entity.HasOne(d => d.Address)
+                    .WithMany(p => p.Orders)
+                    .HasForeignKey(d => d.AddressId)
+                    .OnDelete(DeleteBehavior.SetNull)
+                    .HasConstraintName("order_address_id_fk");
             });
 
             modelBuilder.Entity<OrderProduct>(entity =>

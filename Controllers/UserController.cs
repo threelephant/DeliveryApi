@@ -177,8 +177,31 @@ namespace Delivery.Controllers
             }
             await db.SaveChangesAsync();
             
-            
             return NoContent();
+        }
+
+        [HttpGet("address")]
+        public async Task<IActionResult> GetUserAddresses()
+        {
+            var addresses = await db.Addresses
+                .Include(a => a.Locality)
+                .Join(db.UserAddresses,
+                a => a.Id,
+                ua => ua.AddressId,
+                (a, ua) => new { a, ua })
+                .Where(aua => aua.ua.UserLogin == User.Identity.Name)
+                .Select(a => new
+                {
+                    locality = a.a.Locality.Name,
+                    street = a.a.Street,
+                    building =  a.a.Building,
+                    apartment = a.a.Apartment,
+                    entrance = a.a.Entrance,
+                    level = a.a.Level
+                })
+                .ToListAsync();
+
+            return Ok(addresses);
         }
         
         [HttpGet("{login}/cart")]

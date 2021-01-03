@@ -138,39 +138,127 @@ namespace Delivery.Controllers
         [HttpGet("locality/{title}")]
         public async Task<IActionResult> GetOrdersInLocality([FromRoute] string title)
         {
-            // var orders = db.Orders
-            //     .Include(o => o.Store)
-            //     .ThenInclude(s => s.Address)
-            //     .ThenInclude(a => a.Locality)
-            //     .Include(o => o.UserLoginNavigation)
-            //     .ThenInclude(u => u.UserAddresses)
-            //     .ThenInclude(a => a.Address)
-            //     .Where(o => o.Store.Address.Locality.Name == title)
-            //     .Select(o => new
-            //     {
-            //         customer = new
-            //         {
-            //             first_name = o.UserLoginNavigation.FirstName,
-            //             address = new
-            //             {
-            //                 o.UserLoginNavigation.UserAddresses
-            //             }
-            //         }
-            //     });
+            var orders = await db.Orders
+                .Where(o => o.Address.Locality.Name == title
+                            && o.CourierLogin == null
+                && o.Status == db.OrderStatuses
+                    .FirstOrDefault(s => s.Name == "Предприятие приняло заказ"))
+                .Select(o => new
+                {
+                    id = o.Id,
+                    sum = db.OrderProducts
+                        .Include(p => p.Product)
+                        .Where(p => p.OrderId == o.Id)
+                        .Select(p => new
+                        {
+                            cost = p.Count * (double)Convert.ToDecimal(p.Product.Price)
+                        })
+                        .Sum(p => p.cost),
+                    customer = new
+                    {
+                        first_name = o.UserLoginNavigation.FirstName,
+                        address = new
+                        {
+                            street = o.Address.Street,
+                            building_number = o.Address.Building,
+                            apartment_number = o.Address.Apartment,
+                            entrance = o.Address.Entrance,
+                            level = o.Address.Level
+                        }
+                    },
+                    store = new
+                    {
+                        title = o.Store.Title,
+                        address = new
+                        {
+                            street = o.Store.Address.Street,
+                            building_number = o.Store.Address.Building,
+                            apartment_number = o.Store.Address.Apartment,
+                            entrance = o.Store.Address.Entrance,
+                            level = o.Store.Address.Level
+                        }
+                    }
+                })
+                .ToListAsync();
+
+            return Ok(orders);
+        }
+        
+        [HttpPost("order/{id}/accept")]
+        public async Task<IActionResult> AcceptOrder([FromRoute] long id)
+        {
+            var order = await db.Orders
+                .Where(o => o.Status.Name == "Предприятие приняло заказ"
+                    && o.CourierLogin == null)
+                .FirstOrDefaultAsync(o => o.Id == id);
+            if (order == null)
+            {
+                return NotFound();
+            }
+
+            order.CourierLogin = User.Identity.Name;
+            order.Status = await db.OrderStatuses.FirstOrDefaultAsync(s => s.Name == "Курьер принял заказ");
+
+            await db.SaveChangesAsync();
+            return Ok();
+        }
+        
+        [HttpPost("order/{id}/take")]
+        public async Task<IActionResult> TakeOrder([FromRoute] long id)
+        {
+            var order = await db.Orders
+                .Where(o => o.Status.Name == "Заказ готов"
+                    && o.CourierLogin == User.Identity.Name)
+                .FirstOrDefaultAsync(o => o.Id == id);
+            if (order == null)
+            {
+                return NotFound();
+            }
+
+            order.Status = await db.OrderStatuses.FirstOrDefaultAsync(s => s.Name == "Курьер взял заказ");
+
+            await db.SaveChangesAsync();
+            return Ok();
+        }
+        
+        [HttpPost("order/{id}/deliver")]
+        public async Task<IActionResult> DeliverOrder([FromRoute] long id)
+        {
+            var order = await db.Orders
+                .Where(o => o.Status.Name == "Курьер взял заказ"
+                    && o.CourierLogin == User.Identity.Name)
+                .FirstOrDefaultAsync(o => o.Id == id);
+            if (order == null)
+            {
+                return NotFound();
+            }
+
+            order.Status = await db.OrderStatuses.FirstOrDefaultAsync(s => s.Name == "Заказ доставлен");
+
+            await db.SaveChangesAsync();
+            return Ok();
+        }
+        
+        [HttpPost("order/{id}/deny")]
+        public async Task<IActionResult> DenyOrder([FromRoute] long id)
+        {
+            var order = await db.Orders
+                .Where(o => o.CourierLogin == User.Identity.Name
+                && o.Status.Name == "Курьер принял заказ"
+                || o.Status.Name == "Заказ готов"
+                || o.Status.Name == "Курьер взял заказ")
+                .FirstOrDefaultAsync(o => o.Id == id);
             
-            throw new NotImplementedException();
+            if (order == null)
+            {
+                return NotFound();
+            }
+
+            order.Status = await db.OrderStatuses.FirstOrDefaultAsync(s => s.Name == "Курьер отказался от заказа");
+
+            await db.SaveChangesAsync();
+            return Ok();
         }
         
-        [HttpGet("order/{id}")]
-        public async Task<IActionResult> GetOrderInfo([FromRoute] long id)
-        {
-            throw new NotImplementedException();
-        }
-        
-        [HttpPut("order/{id}")]
-        public async Task<IActionResult> ChangeOrderStatus([FromRoute] long id)
-        {
-            throw new NotImplementedException();
-        }
     }
 }

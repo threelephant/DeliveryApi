@@ -21,11 +21,13 @@ namespace Delivery.Models
         public DateTime? DeliveryDate { get; set; }
         public string CourierLogin { get; set; }
         public short? Rating { get; set; }
+        public long AddressId { get; set; }
 
         public virtual Courier CourierLoginNavigation { get; set; }
         public virtual OrderStatus Status { get; set; }
         public virtual Store Store { get; set; }
         public virtual User UserLoginNavigation { get; set; }
+        public virtual Address Address { get; set; }
         public virtual ICollection<OrderProduct> OrderProducts { get; set; }
     }
 }
