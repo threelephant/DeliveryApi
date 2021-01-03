@@ -1,4 +1,4 @@
-namespace Delivery.Dto.Store
+namespace Delivery.Domain.Store
 {
     public enum StoresOrder
     {

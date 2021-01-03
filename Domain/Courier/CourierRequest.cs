@@ -1,6 +1,6 @@
 using System;
 
-namespace Delivery.Dto.Courier
+namespace Delivery.Domain.Courier
 {
     public class CourierRequest
     {

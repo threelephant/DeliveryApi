@@ -2,7 +2,7 @@ using System;
 using System.Globalization;
 using System.Linq;
 using System.Threading.Tasks;
-using Delivery.Dto.Store;
+using Delivery.Domain.Store;
 using Delivery.Models;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -118,9 +118,27 @@ namespace Delivery.Controllers
         }
 
         [HttpPost("{id}/rate")]
-        public async Task<IActionResult> RateStore([FromRoute] long id)
+        public async Task<IActionResult> RateStore([FromRoute] long id, [FromBody] RateStore rateStore)
         {
-            throw new NotImplementedException();
+            var storeRating = await db.Ratings
+                .FirstOrDefaultAsync(r => r.StoreId == id && r.UserLogin == User.Identity.Name);
+
+            if (storeRating != null)
+            {
+                return BadRequest(new { response = "Заведение уже оценено" });
+            }
+
+            var rating = new Rating
+            {
+                StoreId = id,
+                UserLogin = User.Identity?.Name,
+                Rating1 = rateStore.Rating
+            };
+            
+            await db.Ratings.AddAsync(rating);
+            await db.SaveChangesAsync();
+
+            return Ok();
         }
     }
 }

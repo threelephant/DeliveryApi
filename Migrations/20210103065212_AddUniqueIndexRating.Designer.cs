@@ -3,15 +3,17 @@ using System;
 using Delivery.Models;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
 namespace Delivery.Migrations
 {
     [DbContext(typeof(deliveryContext))]
-    partial class deliveryContextModelSnapshot : ModelSnapshot
+    [Migration("20210103065212_AddUniqueIndexRating")]
+    partial class AddUniqueIndexRating
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -274,23 +276,24 @@ namespace Delivery.Migrations
 
             modelBuilder.Entity("Delivery.Models.Rating", b =>
                 {
-                    b.Property<string>("UserLogin")
-                        .HasMaxLength(25)
-                        .HasColumnType("character varying(25)");
-
-                    b.Property<long>("StoreId")
-                        .HasColumnType("bigint");
-
                     b.Property<short>("Rating1")
                         .HasColumnType("smallint")
                         .HasColumnName("Rating");
 
-                    b.HasKey("UserLogin", "StoreId")
-                        .HasName("ratings_userlogin_storeid_uindex");
+                    b.Property<long>("StoreId")
+                        .HasColumnType("bigint");
+
+                    b.Property<string>("UserLogin")
+                        .IsRequired()
+                        .HasMaxLength(25)
+                        .HasColumnType("character varying(25)");
 
                     b.HasIndex(new[] { "StoreId" }, "IX_Ratings_StoreId");
 
                     b.HasIndex(new[] { "UserLogin" }, "IX_Ratings_UserLogin");
+
+                    b.HasIndex(new[] { "UserLogin", "StoreId" }, "ratings_userlogin_storeid_uindex")
+                        .IsUnique();
 
                     b.ToTable("Ratings");
                 });

@@ -1,6 +1,6 @@
 using System.Collections.Generic;
 
-namespace Delivery.Dto
+namespace Delivery.Domain.User
 {
     public class UserInfo
     {

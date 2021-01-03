@@ -247,8 +247,9 @@ namespace Delivery.Models
 
             modelBuilder.Entity<Rating>(entity =>
             {
-                entity.HasNoKey();
-
+                entity.HasKey(e => new { e.UserLogin, e.StoreId })
+                    .HasName("ratings_userlogin_storeid_uindex");
+                
                 entity.HasIndex(e => e.StoreId, "IX_Ratings_StoreId");
 
                 entity.HasIndex(e => e.UserLogin, "IX_Ratings_UserLogin");

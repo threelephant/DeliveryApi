@@ -1,9 +1,11 @@
 using System;
 using System.Linq;
 using System.Threading.Tasks;
+using Delivery.Domain.Order;
 using Delivery.Models;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using OrderStatus = Delivery.Domain.Order.OrderStatus;
 
 namespace Delivery.Controllers
 {
@@ -77,16 +79,86 @@ namespace Delivery.Controllers
         }
         
         [HttpPost("{id}/rate")]
-        public async Task<IActionResult> RateOrder([FromRoute] long id)
+        public async Task<IActionResult> RateOrder([FromRoute] long id, [FromBody] RateOrder rating)
         {
-            throw new NotImplementedException();
+            var order = await db.Orders
+                .Include(o => o.Status)
+                .Where(o => o.Status.Name == "Заказ доставлен")
+                .FirstOrDefaultAsync(o => o.Id == id);
+            
+            if (order == null)
+            {
+                return NotFound();
+            }
+
+            if (order.Rating != null)
+            {
+                return BadRequest(new { response = "Уже оценено" });
+            }
+
+            order.Rating = rating.Rating;
+            await db.SaveChangesAsync();
+            
+            return Ok();
         }
 
-        //TODO: Add body request
-        [HttpPost("{id}/cart")]
-        public async Task<IActionResult> ActionOrder([FromRoute] long id)
+        [HttpPost("new")]
+        public async Task<IActionResult> ConfirmOrder()
         {
-            throw new NotImplementedException();
+            var userCart = db.Carts
+                .Include(c => c.Product)
+                    .ThenInclude(p => p.Store)
+                .Where(c => c.UserLogin == User.Identity.Name)
+                .ToList();
+
+            var stores = userCart
+                .GroupBy(c => c.Product.Store)
+                .Select(s => s.Key);
+
+            foreach (var store in stores)
+            {
+                var newOrder = new Order
+                {
+                    UserLogin = User.Identity.Name,
+                    StoreId = store.Id,
+                    StatusId = db.OrderStatuses.FirstOrDefault(s => s.Name == "Пользователь подал заказ").Id,
+                    OrderDate = DateTime.Now
+                };
+
+                await db.Orders.AddAsync(newOrder);
+
+                var storeUserCart = userCart.Where(c => c.Product.Store.Id == store.Id);
+                foreach (var cart in storeUserCart)
+                {
+                    var newOrderProduct = new OrderProduct
+                    {
+                        Order = newOrder,
+                        Product = cart.Product,
+                        Count = cart.Count
+                    };
+                    await db.OrderProducts.AddAsync(newOrderProduct);
+                }
+            }
+
+            await db.SaveChangesAsync();
+            return Ok();
+        }
+        
+        [HttpPost("{id}/denied")]
+        public async Task<IActionResult> DeniedOrder([FromRoute] long id)
+        {
+            var order = await db.Orders.FirstOrDefaultAsync(o => o.Id == id);
+
+            if (order == null)
+            {
+                return NotFound();
+            }
+
+            order.Status = await db.OrderStatuses
+                .FirstOrDefaultAsync(s => s.Name == "Пользователь отказался от заказа");
+
+            await db.SaveChangesAsync();
+            return Ok();
         }
     }
 }

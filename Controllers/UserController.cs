@@ -1,12 +1,13 @@
-using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using Delivery.Dto;
+using Delivery.Domain;
+using Delivery.Domain.User;
 using Delivery.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using static System.Enum;
 
 namespace Delivery.Controllers
 {
@@ -198,18 +199,54 @@ namespace Delivery.Controllers
             return Ok(response);
         }
         
-        //TODO: Add body request
-        [HttpPost("{login}/cart")]
-        public async Task<IActionResult> SaveCart([FromRoute] string login)
+        [HttpPatch("{login}/cart")]
+        public async Task<IActionResult> ChangeCart([FromRoute] string login, [FromBody] IEnumerable<CartPatch> cart) 
         {
-            throw new NotImplementedException();
-        }
-        
-        //TODO: Add body request
-        [HttpPut("{login}/cart")]
-        public async Task<IActionResult> ChangeCart([FromRoute] string login)
-        {
-            throw new NotImplementedException();
+            foreach (var cartItem in cart)
+            {
+                TryParse(cartItem.Op, out PatchOperation op);
+                switch (op)
+                {
+                    case PatchOperation.add:
+                        await db.Carts.AddAsync(new Cart
+                        {
+                            UserLogin = login,
+                            ProductId = cartItem.Product.Id,
+                            Count = cartItem.Product.Count
+                        });
+                        break;
+                    case PatchOperation.remove:
+                    {
+                        var crtItm = await db.Carts
+                            .FirstOrDefaultAsync(c => c.ProductId == cartItem.Product.Id
+                                                      && c.UserLogin == login);
+
+                        if (crtItm != null)
+                        {
+                            db.Carts.Remove(crtItm);
+                        }
+
+                        break;
+                    }
+                    case PatchOperation.replace:
+                    {
+                        var crtItm = await db.Carts
+                            .FirstOrDefaultAsync(c => c.ProductId == cartItem.Product.Id
+                                                      && c.UserLogin == login);
+                    
+                        if (crtItm != null)
+                        {
+                            crtItm.Count = cartItem.Product.Count;
+                            db.Carts.Update(crtItm);
+                        }
+
+                        break;
+                    }
+                }
+            }
+
+            await db.SaveChangesAsync();
+            return Ok();
         }
     }
 }
