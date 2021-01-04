@@ -191,19 +191,19 @@ namespace Delivery.Models
                 entity.HasOne(d => d.Store)
                     .WithMany(p => p.Orders)
                     .HasForeignKey(d => d.StoreId)
-                    .OnDelete(DeleteBehavior.SetNull)
+                    .OnDelete(DeleteBehavior.Cascade)
                     .HasConstraintName("order_stores_id_fk");
 
                 entity.HasOne(d => d.UserLoginNavigation)
                     .WithMany(p => p.Orders)
                     .HasForeignKey(d => d.UserLogin)
-                    .OnDelete(DeleteBehavior.SetNull)
+                    .OnDelete(DeleteBehavior.Cascade)
                     .HasConstraintName("order_users_login_fk");
 
                 entity.HasOne(d => d.Address)
                     .WithMany(p => p.Orders)
                     .HasForeignKey(d => d.AddressId)
-                    .OnDelete(DeleteBehavior.SetNull)
+                    .OnDelete(DeleteBehavior.Cascade)
                     .HasConstraintName("order_address_id_fk");
             });
 
@@ -276,7 +276,7 @@ namespace Delivery.Models
                 entity.HasOne(d => d.UserLoginNavigation)
                     .WithMany()
                     .HasForeignKey(d => d.UserLogin)
-                    .OnDelete(DeleteBehavior.SetNull)
+                    .OnDelete(DeleteBehavior.Cascade)
                     .HasConstraintName("ratings_users_login_fk");
             });
 
@@ -318,7 +318,7 @@ namespace Delivery.Models
                 entity.HasOne(d => d.OwnerLoginNavigation)
                     .WithMany(p => p.Stores)
                     .HasForeignKey(d => d.OwnerLogin)
-                    .OnDelete(DeleteBehavior.SetNull)
+                    .OnDelete(DeleteBehavior.Cascade)
                     .HasConstraintName("stores_users_login_fk");
 
                 entity.HasOne(d => d.StoreStatus)
@@ -330,7 +330,8 @@ namespace Delivery.Models
 
             modelBuilder.Entity<StoreCategory>(entity =>
             {
-                entity.HasNoKey();
+                entity.HasKey(e => new { e.StoreId, e.CategoryId })
+                    .HasName("storecategories_pk");
 
                 entity.HasIndex(e => e.CategoryId, "IX_StoreCategories_CategoryId");
 

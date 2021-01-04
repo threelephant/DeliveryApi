@@ -216,6 +216,7 @@ namespace Delivery.Controllers
             }
 
             order.Status = await db.OrderStatuses.FirstOrDefaultAsync(s => s.Name == "Курьер взял заказ");
+            order.TakingDate = DateTime.Now;
 
             await db.SaveChangesAsync();
             return Ok();
@@ -234,7 +235,8 @@ namespace Delivery.Controllers
             }
 
             order.Status = await db.OrderStatuses.FirstOrDefaultAsync(s => s.Name == "Заказ доставлен");
-
+            order.DeliveryDate = DateTime.Now;
+            
             await db.SaveChangesAsync();
             return Ok();
         }

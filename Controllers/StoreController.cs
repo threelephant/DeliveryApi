@@ -23,15 +23,18 @@ namespace Delivery.Controllers
             StoresOrder order = StoresOrder.IdAsc, int limit = 10, int offset = 0)
         {
             var stores = db.Stores
-                .Where(s => s.Address.Locality.Name == city)
+                .Where(s => s.Address.Locality.Name == city
+                            && s.StoreStatus.Name == "Подтверждено")
                 .Select(s => new
                 {
                     id = s.Id,
                     title = s.Title,
-                    rating = db.Ratings.Any(r => r.StoreId == s.Id) ? 
-                        Math.Round(db.Ratings.Where(r => r.StoreId == s.Id)
+                    rating = db.Ratings.Any(r => r.StoreId == s.Id)
+                        ? Math.Round(db.Ratings.Where(r => r.StoreId == s.Id)
                                 .Average(r => r.Rating1), 2)
-                            .ToString(CultureInfo.CurrentCulture) : null
+                            .ToString(CultureInfo.CurrentCulture)
+                        : null,
+                    status = db.StoreStatuses.FirstOrDefault(ss => ss.Id == s.StoreStatusId).Name
                 });
 
             var response = order switch
@@ -48,14 +51,22 @@ namespace Delivery.Controllers
             await response.Skip(offset).Take(limit).ToListAsync();
             return Ok(response);
         }
-
+        
         [HttpGet("{id}")]
         public async Task<IActionResult> GetStore([FromRoute] long id)
         {
-            var store = await db.Stores.FirstOrDefaultAsync(s => s.Id == id);
+            var store = await db.Stores.FirstOrDefaultAsync(s => s.Id == id
+                                                                 && s.StoreStatus.Name == "Подтверждено");
+
+            if (store == null)
+            {
+                return NotFound();
+            }
+            
             var address = await db.Addresses
-                .Select(a => new { a, Locality = a.Locality.Name })
-                .FirstOrDefaultAsync(a => a.a.Id == id);
+                .Include(a => a.Locality)
+                .FirstOrDefaultAsync(a => a.Id == store.AddressId);
+            
             var categories = db.StoreCategories
                 .Where(c => c.StoreId == id)
                 .Select(c => c.Category.Title);
@@ -64,18 +75,19 @@ namespace Delivery.Controllers
             {
                 id = store.Id,
                 title = store.Title,
-                rating = db.Ratings.Any(r => r.StoreId == id) ? 
-                    Math.Round(db.Ratings.Where(r => r.StoreId == id)
+                rating = db.Ratings.Any(r => r.StoreId == id)
+                    ? Math.Round(db.Ratings.Where(r => r.StoreId == id)
                             .Average(r => r.Rating1), 2)
-                        .ToString(CultureInfo.CurrentCulture) : null,
+                        .ToString(CultureInfo.CurrentCulture)
+                    : null,
                 address = new
                 {
-                    locality = address.Locality,
-                    street = address.a.Street,
-                    building_number = address.a.Building,
-                    apartment_number = address.a.Apartment,
-                    entrance = address.a.Entrance,
-                    level = address.a.Level
+                    locality = address.Locality.Name,
+                    street = address.Street,
+                    building_number = address.Building,
+                    apartment_number = address.Apartment,
+                    entrance = address.Entrance,
+                    level = address.Level
                 },
                 categories = categories.AsEnumerable()
             };

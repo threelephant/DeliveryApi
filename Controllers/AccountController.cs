@@ -5,6 +5,7 @@ using System.IdentityModel.Tokens.Jwt;
 using System.Linq;
 using System.Security.Claims;
 using System.Threading.Tasks;
+using Delivery.Domain.Account;
 using Delivery.Installers;
 using Delivery.Models;
 using Microsoft.AspNetCore.Cryptography.KeyDerivation;
@@ -24,9 +25,9 @@ namespace Delivery.Controllers
         }
 
         [HttpPost("/login")]
-        public async Task<IActionResult> Login(string username, string password)
+        public async Task<IActionResult> Login([FromBody] LoginModel loginModel)
         {
-            var user = await db.Users.FirstOrDefaultAsync(u => u.Login == username);
+            var user = await db.Users.FirstOrDefaultAsync(u => u.Login == loginModel.username);
             if (user == null)
             {
                 return BadRequest(new { error = "Некорректные логин и/или пароль" });
@@ -34,14 +35,14 @@ namespace Delivery.Controllers
 
             var salt = user.Salt;
             var hashedPassword = Convert.ToBase64String(KeyDerivation.Pbkdf2(
-                password: password,
+                password: loginModel.password,
                 salt: salt.ToByteArray(),
                 prf: KeyDerivationPrf.HMACSHA1,
                 iterationCount: 10000,
                 numBytesRequested: 256 / 8));
 
             var loggedUser = await db.Users.Include(u => u.Role)
-                .FirstOrDefaultAsync(u => u.Login == username && u.Password == hashedPassword);
+                .FirstOrDefaultAsync(u => u.Login == loginModel.username && u.Password == hashedPassword);
 
             if (loggedUser == null)
             {
@@ -50,18 +51,18 @@ namespace Delivery.Controllers
             
             var token = GetToken(loggedUser);
 
-            return Ok(new { username = username, token = token });
+            return Ok(new { loginModel.username, token });
         }
 
         [HttpPost("/register")]
-        public async Task<IActionResult> Register(string username, string password, string confirmPassword)
+        public async Task<IActionResult> Register([FromBody] RegisterModel registerModel)
         {
-            if (password != confirmPassword)
+            if (registerModel.password != registerModel.confirmPassword)
             {
                 return BadRequest(new { error = "Пароли не совпадают" });
             }
             
-            var user = await db.Users.FirstOrDefaultAsync(u => u.Login == username);
+            var user = await db.Users.FirstOrDefaultAsync(u => u.Login == registerModel.username);
             if (user != null)
             {
                 return BadRequest(new { error = "Пользователь с таким логином уже существует" });
@@ -70,7 +71,7 @@ namespace Delivery.Controllers
             var salt = Guid.NewGuid();
 
             var hashedPassword = Convert.ToBase64String(KeyDerivation.Pbkdf2(
-                password: password,
+                password: registerModel.password,
                 salt: salt.ToByteArray(),
                 prf: KeyDerivationPrf.HMACSHA1,
                 iterationCount: 10000,
@@ -78,7 +79,7 @@ namespace Delivery.Controllers
             
             var newUser = new User
             {
-                Login = username,
+                Login = registerModel.username,
                 FirstName = "",
                 LastName = "",
                 Role = db.Roles.FirstOrDefault(r => r.Name == "user"),
@@ -91,7 +92,7 @@ namespace Delivery.Controllers
 
             var token = GetToken(newUser);
 
-            return Ok(new { username, token });
+            return Ok(new { registerModel.username, token });
         }
 
         private string GetToken(User user)

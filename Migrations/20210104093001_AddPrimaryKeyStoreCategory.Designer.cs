@@ -3,15 +3,17 @@ using System;
 using Delivery.Models;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
 namespace Delivery.Migrations
 {
     [DbContext(typeof(deliveryContext))]
-    partial class deliveryContextModelSnapshot : ModelSnapshot
+    [Migration("20210104093001_AddPrimaryKeyStoreCategory")]
+    partial class AddPrimaryKeyStoreCategory
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -533,7 +535,7 @@ namespace Delivery.Migrations
                         .WithMany("Orders")
                         .HasForeignKey("AddressId")
                         .HasConstraintName("order_address_id_fk")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.SetNull)
                         .IsRequired();
 
                     b.HasOne("Delivery.Models.Courier", "CourierLoginNavigation")
@@ -553,14 +555,14 @@ namespace Delivery.Migrations
                         .WithMany("Orders")
                         .HasForeignKey("StoreId")
                         .HasConstraintName("order_stores_id_fk")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.SetNull)
                         .IsRequired();
 
                     b.HasOne("Delivery.Models.User", "UserLoginNavigation")
                         .WithMany("Orders")
                         .HasForeignKey("UserLogin")
                         .HasConstraintName("order_users_login_fk")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.SetNull)
                         .IsRequired();
 
                     b.Navigation("Address");
@@ -620,7 +622,7 @@ namespace Delivery.Migrations
                         .WithMany()
                         .HasForeignKey("UserLogin")
                         .HasConstraintName("ratings_users_login_fk")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.SetNull)
                         .IsRequired();
 
                     b.Navigation("Store");
@@ -639,7 +641,7 @@ namespace Delivery.Migrations
                         .WithMany("Stores")
                         .HasForeignKey("OwnerLogin")
                         .HasConstraintName("stores_users_login_fk")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.SetNull)
                         .IsRequired();
 
                     b.HasOne("Delivery.Models.StoreStatus", "StoreStatus")
