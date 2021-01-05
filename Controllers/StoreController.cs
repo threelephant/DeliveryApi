@@ -2,6 +2,7 @@ using System;
 using System.Globalization;
 using System.Linq;
 using System.Threading.Tasks;
+using Delivery.Cache;
 using Delivery.Domain.Store;
 using Delivery.Models;
 using Microsoft.AspNetCore.Mvc;
@@ -19,6 +20,7 @@ namespace Delivery.Controllers
         }
 
         [HttpGet]
+        [Cached(600)]
         public async Task<IActionResult> GetStores(string city, 
             StoresOrder order = StoresOrder.IdAsc, int limit = 10, int offset = 0)
         {
