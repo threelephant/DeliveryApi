@@ -5,7 +5,7 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace Delivery.Installers
 {
-    public static class InstallSerExtensions
+    public static class InstallServicesExtensions
     {
         public static void InstallServicesInAssembly(this IServiceCollection services, IConfiguration configuration)
         {

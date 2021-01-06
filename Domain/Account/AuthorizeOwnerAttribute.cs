@@ -22,7 +22,7 @@ namespace Delivery.Domain.Account
             
             if (!isCourier)
             {
-                context.Result = new UnauthorizedResult();
+                context.Result = new ForbidResult();
                 return;
             }
 

@@ -12,6 +12,10 @@ using static System.Enum;
 
 namespace Delivery.Controllers
 {
+    /// <summary>
+    /// Запросы для обычного пользователя/клиента
+    /// </summary>
+    /// <response code="401">Пользователь не авторизован</response>
     [Authorize]
     [ApiController]
     [Route("api/users")]
@@ -22,7 +26,13 @@ namespace Delivery.Controllers
         {
             this.db = db;
         }
-
+        
+        /// <summary>
+        /// Возвращает информацию о пользователе
+        /// </summary>
+        /// <param name="login">Логин пользователя</param>
+        /// <response code="200">Возвращает информацию о пользователе</response>
+        /// <response code="403">Не является пользователем с введённым логином</response>
         [AuthorizeByLogin]
         [HttpGet("{login}")]
         public async Task<IActionResult> GetUser(string login)
@@ -65,6 +75,12 @@ namespace Delivery.Controllers
             return Ok(response);
         }
 
+        /// <summary>
+        /// Изменяет информацию о пользователе
+        /// </summary>
+        /// <param name="login">Логин пользователя</param>
+        /// <response code="200">Возвращает информацию о пользователе</response>
+        /// <response code="403">Не является пользователем с введённым логином</response>
         [AuthorizeByLogin]
         [HttpPut("{login}")]
         public async Task<IActionResult> ChangeUser([FromRoute] string login, [FromBody] UserInfo userInfo)
@@ -154,6 +170,12 @@ namespace Delivery.Controllers
             return Ok();
         }
 
+        /// <summary>
+        /// Удаляет пользователя
+        /// </summary>
+        /// <param name="login">Логин пользователя</param>
+        /// <response code="204">Удаляет пользователя</response>
+        /// <response code="403">Не является пользователем с введённым логином</response>
         [AuthorizeByLogin]
         [HttpDelete("{login}")]
         public async Task<IActionResult> DeleteUser(string login)
@@ -168,6 +190,11 @@ namespace Delivery.Controllers
             return NoContent();
         }
 
+        /// <summary>
+        /// Возвращает адреса пользователя
+        /// </summary>
+        /// <param name="login">Логин пользователя</param>
+        /// <response code="200">Возвращает адреса пользователя</response>
         [HttpGet("address")]
         public async Task<IActionResult> GetUserAddresses()
         {
@@ -192,6 +219,12 @@ namespace Delivery.Controllers
             return Ok(addresses);
         }
         
+        /// <summary>
+        /// Возвращает корзину пользователя
+        /// </summary>
+        /// <param name="login">Логин пользователя</param>
+        /// <response code="200">Возвращает корзину пользователя</response>
+        /// <response code="403">Не является пользователем с введённым логином</response>
         [AuthorizeByLogin]
         [HttpGet("{login}/cart")]
         public async Task<IActionResult> GetCart([FromRoute] string login)
@@ -211,6 +244,12 @@ namespace Delivery.Controllers
             return Ok(response);
         }
         
+        /// <summary>
+        /// Изменяет корзину пользователя
+        /// </summary>
+        /// <param name="login">Логин пользователя</param>
+        /// <response code="200">Сообщение об успешном изменении</response>
+        /// <response code="403">Не является пользователем с введённым логином</response>
         [AuthorizeByLogin]
         [HttpPatch("{login}/cart")]
         public async Task<IActionResult> ChangeCart([FromRoute] string login, [FromBody] IEnumerable<CartPatch> cart) 

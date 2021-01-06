@@ -13,7 +13,7 @@ namespace Delivery.Domain.Account
             context.ActionArguments.TryGetValue("login", out var login);
             if (context.HttpContext.User.Identity?.Name != login as string)
             {
-                context.Result = new UnauthorizedResult();
+                context.Result = new ForbidResult();
                 return;
             }
             

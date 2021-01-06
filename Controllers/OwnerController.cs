@@ -11,6 +11,11 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Delivery.Controllers
 {
+    /// <summary>
+    /// Запросы для владельца предприятия
+    /// </summary>
+    /// <response code="401">Пользователь не авторизован</response>
+    /// <response code="403">Пользователь не является владельцем каких-либо предприятий</response>
     [Authorize]
     [AuthorizeOwner]
     [ApiController]
@@ -24,6 +29,10 @@ namespace Delivery.Controllers
             this.db = db;
         }
 
+        /// <summary>
+        /// Список заведений пользователя
+        /// </summary>
+        /// <response code="200">Список заведений пользователя</response>
         [HttpGet("store")]
         public async Task<IActionResult> GetOwnerStores()
         {
@@ -43,22 +52,35 @@ namespace Delivery.Controllers
         }
         
         //TODO: Think about statistics
+        /// <summary>
+        /// Возвращает информацию о предприятии
+        /// </summary>
+        /// <param name="id">ID предприятия</param>
+        /// <response code="200">Возвращает информацию о предприятии</response>
+        /// <response code="403">Пользователь не является владельцем данного предприятия</response>
+        /// <response code="404">Данного предприятия не существует</response>
         [HttpGet("store/{id}")]
         public async Task<IActionResult> GetOwnerStore([FromRoute] long id)
         {
             var store = await db.Stores
                 .FirstOrDefaultAsync(s => s.Id == id);
+            
+            if (store == null)
+            {
+                return NotFound();
+            }
+            
+            if (store.OwnerLogin != User.Identity?.Name)
+            {
+                return Forbid();
+            }
+            
             var address = await db.Addresses
                 .Select(a => new { a, Locality = a.Locality.Name })
                 .FirstOrDefaultAsync(a => a.a.Id == id);
             var categories = db.StoreCategories
                 .Where(c => c.StoreId == id)
                 .Select(c => c.Category.Title);
-
-            if (store == null)
-            {
-                return NotFound();
-            }
             
             var response = new
             {
@@ -85,9 +107,23 @@ namespace Delivery.Controllers
             return Ok(response);
         }
         
+        /// <summary>
+        /// Выводит заказы предприятия
+        /// </summary>
+        /// <param name="id">ID предприятия</param>
+        /// <param name="order">Сортировка</param>
+        /// <response code="200">Возвращает информацию о предприятии</response>
+        /// <response code="403">Пользователь не является владельцем данного предприятия</response>
+        /// <response code="404">Данного предприятия не существует</response>
         [HttpGet("store/{id}/orders")]
         public async Task<IActionResult> GetOwnerOrders([FromRoute] long id, [FromRoute] string order)
         {
+            var store = await db.Stores.FirstOrDefaultAsync(s => s.Id == id);
+            if (store.OwnerLogin != User.Identity?.Name)
+            {
+                return Forbid();
+            }
+            
             var orders = db.Orders
                 .Where(o => o.StoreId == id)
                 .Select(o => new
@@ -154,6 +190,11 @@ namespace Delivery.Controllers
             return Ok(orders);
         }
         
+        /// <summary>
+        /// Добавляет предприятие
+        /// </summary>
+        /// <param name="request">Параметры добавляемого предприятия</param>
+        /// <response code="200"></response>
         [HttpPost("store")]
         public async Task<IActionResult> AddStore([FromBody] StoreRequest request)
         {
@@ -211,9 +252,28 @@ namespace Delivery.Controllers
             return Ok();
         }
         
+        /// <summary>
+        /// Изменяет параметры предприятия
+        /// </summary>
+        /// <param name="id">ID предприятия</param>
+        /// <param name="request">Параметры изменяемого предприятия</param>
+        /// <response code="200">Успешное изменение</response>
+        /// <response code="403">Пользователь не является владельцем данного предприятия</response>
+        /// <response code="404">Данного предприятия не существует</response>
         [HttpPut("store/{id}")]
         public async Task<IActionResult> ChangeStore([FromRoute] long id, [FromBody] StoreRequest request)
         {
+            var store = await db.Stores.FirstOrDefaultAsync(s => s.Id == id);
+            if (store == null)
+            {
+                return NotFound();
+            }
+
+            if (store.OwnerLogin != User.Identity?.Name)
+            {
+                return Forbid();
+            }
+            
             var address = await db.Addresses
                 .Include(a => a.Locality)
                 .FirstOrDefaultAsync(a => a.Locality.Name == request.address.locality
@@ -251,8 +311,6 @@ namespace Delivery.Controllers
             var oldCategories = currentCategories.Where(c =>
                 !categories.Contains(c));
 
-            var store = await db.Stores.FirstOrDefaultAsync(s => s.Id == id);
-
             store.Title = request.title;
             store.BeginWorking = request.working_hours.begin;
             store.EndWorking = request.working_hours.end;
@@ -276,6 +334,13 @@ namespace Delivery.Controllers
             return Ok();
         }
         
+        /// <summary>
+        /// Удаляет предприятие
+        /// </summary>
+        /// <param name="id">ID предприятия</param>
+        /// <response code="204">Успешное удаление</response>
+        /// <response code="403">Пользователь не является владельцем данного предприятия</response>
+        /// <response code="404">Данного предприятия не существует</response>
         [HttpDelete("store/{id}")]
         public async Task<IActionResult> DeleteStore([FromRoute] long id)
         {
@@ -286,20 +351,37 @@ namespace Delivery.Controllers
                 return NotFound();
             }
 
+            if (store.OwnerLogin != User.Identity?.Name)
+            {
+                return Forbid();
+            }
+
             db.Stores.Remove(store);
             await db.SaveChangesAsync();
 
             return NoContent();
         }
         
+        /// <summary>
+        /// Добавляет продукт предприятия
+        /// </summary>
+        /// <param name="id">ID предприятия</param>
+        /// <response code="200">Успешное добавление</response>
+        /// <response code="403">Пользователь не является владельцем данного предприятия</response>
+        /// <response code="404">Данного предприятия не существует</response>
         [HttpPost("store/{id}/menu")]
         public async Task<IActionResult> AddStoreItem([FromRoute] long id, [FromBody] ProductRequest request)
         {
-            var isStoreExisted = await db.Stores.AnyAsync(s => s.Id == id);
+            var store = await db.Stores.FirstOrDefaultAsync(s => s.Id == id);
 
-            if (!isStoreExisted)
+            if (store == null)
             {
                 return NotFound();
+            }
+
+            if (store.OwnerLogin != User.Identity?.Name)
+            {
+                return Forbid();
             }
             
             var product = new Product
@@ -316,13 +398,28 @@ namespace Delivery.Controllers
             return Ok();
         }
         
+        /// <summary>
+        /// Изменяет продукт предприятия
+        /// </summary>
+        /// <param name="id">ID продукта</param>
+        /// <response code="200">Успешное изменение</response>
+        /// <response code="403">Пользователь не является владельцем данного предприятия</response>
+        /// <response code="404">Данного продукта не существует</response>
         [HttpPut("store/menu/{id}")]
         public async Task<IActionResult> ChangeStoreItem([FromRoute] long id, [FromBody] ProductRequest request)
         {
-            var product = await db.Products.FirstOrDefaultAsync(p => p.Id == id);
+            var product = await db.Products
+                .Include(p => p.Store)
+                .FirstOrDefaultAsync(p => p.Id == id);
+            
             if (product == null)
             {
                 return NotFound();
+            }
+            
+            if (product.Store.OwnerLogin != User.Identity?.Name)
+            {
+                return Forbid();
             }
 
             product.Title = request.title;
@@ -334,13 +431,28 @@ namespace Delivery.Controllers
             return Ok();
         }
         
+        /// <summary>
+        /// Удаляет продукт предприятия
+        /// </summary>
+        /// <param name="id">ID продукта</param>
+        /// <response code="204">Успешное удаление</response>
+        /// <response code="403">Пользователь не является владельцем данного предприятия</response>
+        /// <response code="404">Данного продукта не существует</response>
         [HttpDelete("store/menu/{id}")]
         public async Task<IActionResult> DeleteStoreItem([FromRoute] long id)
         {
-            var product = await db.Products.FirstOrDefaultAsync(p => p.Id == id);
+            var product = await db.Products
+                .Include(p => p.Store)
+                .FirstOrDefaultAsync(p => p.Id == id);
+
             if (product == null)
             {
                 return NotFound();
+            }
+
+            if (product.Store.OwnerLogin != User.Identity?.Name)
+            {
+                return Forbid();
             }
 
             db.Products.Remove(product);
@@ -349,15 +461,29 @@ namespace Delivery.Controllers
             return NoContent();
         }
         
+        /// <summary>
+        /// Принимает заказ клиента
+        /// </summary>
+        /// <param name="id">ID заказа</param>
+        /// <response code="200">Принимает заказ клиента</response>
+        /// <response code="403">Пользователь не является владельцем данного предприятия</response>
+        /// <response code="404">Данного заказа не существует</response>
         [HttpPost("order/{id}/accept")]
         public async Task<IActionResult> AcceptOrder([FromRoute] long id)
         {
             var order = await db.Orders
                 .Where(o => o.Status.Name == "Пользователь подал заказ")
+                .Include(o => o.Store)
                 .FirstOrDefaultAsync(o => o.Id == id);
+            
             if (order == null)
             {
                 return NotFound();
+            }
+
+            if (order.Store.OwnerLogin != User.Identity?.Name)
+            {
+                return Forbid();
             }
 
             order.Status = await db.OrderStatuses.FirstOrDefaultAsync(s => s.Name == "Предприятие приняло заказ");
@@ -366,15 +492,29 @@ namespace Delivery.Controllers
             return Ok();
         }
         
+        /// <summary>
+        /// Уведомляет о готовности заказа
+        /// </summary>
+        /// <param name="id">ID заказа</param>
+        /// <response code="200">Уведомляет о готовности заказа</response>
+        /// <response code="403">Пользователь не является владельцем данного предприятия</response>
+        /// <response code="404">Данного заказа не существует</response>
         [HttpPost("order/{id}/ready")]
         public async Task<IActionResult> ReadyOrder([FromRoute] long id)
         {
             var order = await db.Orders
                 .Where(o => o.Status.Name == "Курьер принял заказ")
+                .Include(o => o.Store)
                 .FirstOrDefaultAsync(o => o.Id == id);
+            
             if (order == null)
             {
                 return NotFound();
+            }
+            
+            if (order.Store.OwnerLogin != User.Identity?.Name)
+            {
+                return Forbid();
             }
 
             order.Status = await db.OrderStatuses.FirstOrDefaultAsync(s => s.Name == "Заказ готов");
@@ -383,6 +523,13 @@ namespace Delivery.Controllers
             return Ok();
         }
         
+        /// <summary>
+        /// Отказаться от заказа
+        /// </summary>
+        /// <param name="id">ID заказа</param>
+        /// <response code="200">Отказаться от заказа</response>
+        /// <response code="403">Пользователь не является владельцем данного предприятия</response>
+        /// <response code="404">Данного заказа не существует</response>
         [HttpPost("order/{id}/deny")]
         public async Task<IActionResult> DenyOrder([FromRoute] long id)
         {
@@ -391,11 +538,17 @@ namespace Delivery.Controllers
                             && o.Status.Name == "Курьер принял заказ"
                             || o.Status.Name == "Заказ готов"
                             || o.Status.Name == "Предприятие приняло заказ")
+                .Include(o => o.Store)
                 .FirstOrDefaultAsync(o => o.Id == id);
             
             if (order == null)
             {
                 return NotFound();
+            }
+            
+            if (order.Store.OwnerLogin != User.Identity?.Name)
+            {
+                return Forbid();
             }
 
             order.Status = await db.OrderStatuses.FirstOrDefaultAsync(s => s.Name == "Предприятие отказалось от заказа");

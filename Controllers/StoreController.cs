@@ -11,6 +11,9 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Delivery.Controllers
 {
+    /// <summary>
+    /// Запросы для информации о предприятиях
+    /// </summary>
     [ApiController]
     [Route("api/store")]
     public class StoreController : ControllerBase
@@ -21,6 +24,14 @@ namespace Delivery.Controllers
             this.db = db;
         }
 
+        /// <summary>
+        /// Возвращает список предприятий
+        /// </summary>
+        /// <param name="city">Город</param>
+        /// <param name="order">Сортировка</param>
+        /// <param name="limit">Количество магазинов</param>
+        /// <param name="offset">Смещение</param>
+        /// <response code="200">Возвращает список предприятий</response>
         [HttpGet]
         [Cached(600)]
         public async Task<IActionResult> GetStores(string city, 
@@ -56,6 +67,12 @@ namespace Delivery.Controllers
             return Ok(response);
         }
         
+        /// <summary>
+        /// Возвращает информацию о предприятии
+        /// </summary>
+        /// <param name="id">ID предприятия</param>
+        /// <response code="200">Возвращает список предприятий</response>
+        /// <response code="404">Предприятие не найдено</response>
         [HttpGet("{id}")]
         public async Task<IActionResult> GetStore([FromRoute] long id)
         {
@@ -99,9 +116,21 @@ namespace Delivery.Controllers
             return Ok(response);
         }
         
+        /// <summary>
+        /// Возвращает список продукций предприятия
+        /// </summary>
+        /// <param name="id">ID предприятия</param>
+        /// <response code="200">Возвращает список продукций предприятия</response>
+        /// <response code="404">Предприятие не найдено</response>
         [HttpGet("{id}/menu")]
         public async Task<IActionResult> GetMenu([FromRoute] long id)
         {
+            var isStoreExist = db.Stores.Any(s => s.Id == id);
+            if (isStoreExist)
+            {
+                return NotFound();
+            }
+            
             var response = await db.Products
                 .Where(p => p.StoreId == id)
                 .Select(p => new
@@ -115,24 +144,43 @@ namespace Delivery.Controllers
             return Ok(response);
         }
         
+        /// <summary>
+        /// Возвращает информацию о продукции предприятия
+        /// </summary>
+        /// <param name="id">ID продукции</param>
+        /// <response code="200">Возвращает список продукции предприятия</response>
+        /// <response code="404">Продукция не найдена</response>
         [HttpGet("menu/{idMenu}")]
         public async Task<IActionResult> GetMenuItem([FromRoute] long idMenu)
         {
             var storeItem = await db.Products
-                .Select(p => new { p, StoreTitle = p.Store.Title })
-                .FirstOrDefaultAsync(p => p.p.Id == idMenu);
+                .Include(p => p.Store)
+                .FirstOrDefaultAsync(p => p.Id == idMenu);
+
+            if (storeItem == null)
+            {
+                return NotFound();
+            }
+            
             var response = new
             {
-                id = storeItem.p.Id,
-                title = storeItem.p.Title,
-                price = storeItem.p.Price,
-                weight = storeItem.p.Weight,
-                store_title = storeItem.StoreTitle
+                id = storeItem.Id,
+                title = storeItem.Title,
+                price = storeItem.Price,
+                weight = storeItem.Weight,
+                store_title = storeItem.Store.Title
             };
             
             return Ok(response);
         }
 
+        /// <summary>
+        /// Оценка предприятия
+        /// </summary>
+        /// <param name="id">ID предприятия</param>
+        /// <response code="200">Заведение успешно оценено</response>
+        /// <response code="400">Заведение уже оценено</response>
+        /// <response code="401">Пользователь не авторизован</response>
         [Authorize]
         [HttpPost("{id}/rate")]
         public async Task<IActionResult> RateStore([FromRoute] long id, [FromBody] RateStore rateStore)
