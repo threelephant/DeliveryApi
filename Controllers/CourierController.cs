@@ -2,14 +2,19 @@ using System;
 using System.Globalization;
 using System.Linq;
 using System.Threading.Tasks;
+using Delivery.Domain.Account;
 using Delivery.Domain.Courier;
 using Delivery.Models;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
 namespace Delivery.Controllers
 {
-    [Route("courier")]
+    [Authorize]
+    [AuthorizeCourier]
+    [ApiController]
+    [Route("api/courier")]
     public class CourierController : ControllerBase
     {
         private readonly deliveryContext db;
@@ -45,6 +50,7 @@ namespace Delivery.Controllers
             return Ok(result);
         }
 
+        [AuthorizeByLogin]
         [HttpPost("{login}")]
         public async Task<IActionResult> AddCourier([FromRoute] string login, [FromBody] CourierRequest courierRequest)
         {
@@ -80,6 +86,7 @@ namespace Delivery.Controllers
             return Ok();
         }
 
+        [AuthorizeByLogin]
         [HttpPut("{login}")]
         public async Task<IActionResult> ChangeCourier([FromRoute] string login, [FromBody] CourierChangeRequest request)
         {
@@ -98,6 +105,7 @@ namespace Delivery.Controllers
             return Ok();
         }
         
+        [AuthorizeByLogin]
         [HttpDelete("{login}")]
         public async Task<IActionResult> QuitCourier([FromRoute] string login)
         {

@@ -37,7 +37,7 @@ namespace Delivery.Installers
 
         public static SymmetricSecurityKey GetSymmetricSecurityKey()
         {
-            return new SymmetricSecurityKey(Encoding.ASCII.GetBytes(KEY));
+            return new(Encoding.ASCII.GetBytes(KEY));
         }
     }
 }

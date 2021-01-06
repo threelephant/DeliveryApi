@@ -2,14 +2,19 @@ using System;
 using System.Globalization;
 using System.Linq;
 using System.Threading.Tasks;
+using Delivery.Domain.Account;
 using Delivery.Domain.Owner;
 using Delivery.Models;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
 namespace Delivery.Controllers
 {
-    [Route("owner")]
+    [Authorize]
+    [AuthorizeOwner]
+    [ApiController]
+    [Route("api/owner")]
     public class OwnerController : ControllerBase
     {
         private readonly deliveryContext db;

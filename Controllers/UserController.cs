@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Delivery.Domain;
+using Delivery.Domain.Account;
 using Delivery.Domain.User;
 using Delivery.Models;
 using Microsoft.AspNetCore.Authorization;
@@ -11,9 +12,9 @@ using static System.Enum;
 
 namespace Delivery.Controllers
 {
-    // [Authorize]
+    [Authorize]
     [ApiController]
-    [Route("users")]
+    [Route("api/users")]
     public class UserController : ControllerBase
     {
         private readonly deliveryContext db;
@@ -22,14 +23,10 @@ namespace Delivery.Controllers
             this.db = db;
         }
 
+        [AuthorizeByLogin]
         [HttpGet("{login}")]
         public async Task<IActionResult> GetUser(string login)
         {
-            if (login != User.Identity?.Name)
-            {
-                return Unauthorized();
-            }
-
             var userAddresses = from user in db.Users
                 join userAddress in db.UserAddresses on user.Login equals userAddress.UserLogin
                 join address in db.Addresses on userAddress.AddressId equals address.Id
@@ -68,14 +65,10 @@ namespace Delivery.Controllers
             return Ok(response);
         }
 
+        [AuthorizeByLogin]
         [HttpPut("{login}")]
         public async Task<IActionResult> ChangeUser([FromRoute] string login, [FromBody] UserInfo userInfo)
         {
-            if (login != User.Identity?.Name)
-            {
-                return Unauthorized();
-            }
-            
             var changedUser = await db.Users.FirstOrDefaultAsync(u => u.Login == login);
             changedUser.FirstName = userInfo.name.first_name;
             changedUser.LastName = userInfo.name.last_name;
@@ -161,15 +154,10 @@ namespace Delivery.Controllers
             return Ok();
         }
 
-        //TODO: Выйти из аккаунта перед удалением
+        [AuthorizeByLogin]
         [HttpDelete("{login}")]
         public async Task<IActionResult> DeleteUser(string login)
         {
-            if (login != User.Identity?.Name)
-            {
-                return Unauthorized();
-            }
-
             var user = db.Users.FirstOrDefault(u => u.Login == login);
             if (user != null)
             {
@@ -204,6 +192,7 @@ namespace Delivery.Controllers
             return Ok(addresses);
         }
         
+        [AuthorizeByLogin]
         [HttpGet("{login}/cart")]
         public async Task<IActionResult> GetCart([FromRoute] string login)
         {
@@ -222,6 +211,7 @@ namespace Delivery.Controllers
             return Ok(response);
         }
         
+        [AuthorizeByLogin]
         [HttpPatch("{login}/cart")]
         public async Task<IActionResult> ChangeCart([FromRoute] string login, [FromBody] IEnumerable<CartPatch> cart) 
         {

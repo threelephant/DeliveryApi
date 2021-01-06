@@ -5,12 +5,14 @@ using System.Threading.Tasks;
 using Delivery.Cache;
 using Delivery.Domain.Store;
 using Delivery.Models;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
 namespace Delivery.Controllers
 {
-    [Route("store")]
+    [ApiController]
+    [Route("api/store")]
     public class StoreController : ControllerBase
     {
         private readonly deliveryContext db;
@@ -131,6 +133,7 @@ namespace Delivery.Controllers
             return Ok(response);
         }
 
+        [Authorize]
         [HttpPost("{id}/rate")]
         public async Task<IActionResult> RateStore([FromRoute] long id, [FromBody] RateStore rateStore)
         {

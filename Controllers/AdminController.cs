@@ -1,15 +1,17 @@
 using System;
-using System.Collections.Immutable;
 using System.Linq;
 using System.Threading.Tasks;
 using Delivery.Domain.User;
 using Delivery.Models;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
 namespace Delivery.Controllers
 {
-    [Route("admin")]
+    [Authorize(Roles = "admin")]
+    [ApiController]
+    [Route("api/admin")]
     public class AdminController : ControllerBase
     {
         private readonly deliveryContext db;

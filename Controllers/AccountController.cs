@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.IdentityModel.Tokens.Jwt;
 using System.Linq;
 using System.Security.Claims;
@@ -8,6 +7,7 @@ using System.Threading.Tasks;
 using Delivery.Domain.Account;
 using Delivery.Installers;
 using Delivery.Models;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Cryptography.KeyDerivation;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -16,6 +16,7 @@ using Microsoft.IdentityModel.Tokens;
 namespace Delivery.Controllers
 {
     [ApiController]
+    [Route("api/account")]
     public class AccountController : ControllerBase
     {
         private readonly deliveryContext db;
@@ -24,7 +25,7 @@ namespace Delivery.Controllers
             this.db = db;
         }
 
-        [HttpPost("/login")]
+        [HttpPost("login")]
         public async Task<IActionResult> Login([FromBody] LoginModel loginModel)
         {
             var user = await db.Users.FirstOrDefaultAsync(u => u.Login == loginModel.username);
@@ -54,7 +55,7 @@ namespace Delivery.Controllers
             return Ok(new { loginModel.username, token });
         }
 
-        [HttpPost("/register")]
+        [HttpPost("register")]
         public async Task<IActionResult> Register([FromBody] RegisterModel registerModel)
         {
             if (registerModel.password != registerModel.confirmPassword)
@@ -93,6 +94,52 @@ namespace Delivery.Controllers
             var token = GetToken(newUser);
 
             return Ok(new { registerModel.username, token });
+        }
+
+        [Authorize]
+        [HttpPost("reset")]
+        public async Task<IActionResult> Reset([FromBody] ResetModel resetModel)
+        {
+            if (resetModel.new_password != resetModel.confirm_new_password)
+            {
+                return BadRequest(new { error = "Пароли не совпадают" });
+            }
+            
+            var user = await db.Users.FirstOrDefaultAsync(u => u.Login == resetModel.username);
+            if (user == null)
+            {
+                return BadRequest(new { error = "Некорректные логин и/или пароль" });
+            }
+            
+            var salt = user.Salt;
+            var hashedPassword = Convert.ToBase64String(KeyDerivation.Pbkdf2(
+                password: resetModel.old_password,
+                salt: salt.ToByteArray(),
+                prf: KeyDerivationPrf.HMACSHA1,
+                iterationCount: 10000,
+                numBytesRequested: 256 / 8));
+            
+            var loggedUser = await db.Users.Include(u => u.Role)
+                .FirstOrDefaultAsync(u => u.Login == resetModel.username && u.Password == hashedPassword);
+            
+            if (loggedUser == null)
+            {
+                return BadRequest(new {error = "Некорректные логин и/или пароль"});
+            }
+            
+            var newSalt = Guid.NewGuid();
+            var newHashedPassword = Convert.ToBase64String(KeyDerivation.Pbkdf2(
+                password: resetModel.new_password,
+                salt: newSalt.ToByteArray(),
+                prf: KeyDerivationPrf.HMACSHA1,
+                iterationCount: 10000,
+                numBytesRequested: 256 / 8));
+
+            loggedUser.Salt = newSalt;
+            loggedUser.Password = newHashedPassword;
+
+            await db.SaveChangesAsync();
+            return Ok();
         }
 
         private string GetToken(User user)

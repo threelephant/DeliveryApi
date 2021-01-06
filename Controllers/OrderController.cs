@@ -3,13 +3,16 @@ using System.Linq;
 using System.Threading.Tasks;
 using Delivery.Domain.Order;
 using Delivery.Models;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using OrderStatus = Delivery.Domain.Order.OrderStatus;
 
 namespace Delivery.Controllers
 {
-    [Route("order")]
+    [Authorize]
+    [ApiController]
+    [Route("api/order")]
     public class OrderController : ControllerBase
     {
         private readonly deliveryContext db;
