@@ -10,6 +10,10 @@ using OrderStatus = Delivery.Domain.Order.OrderStatus;
 
 namespace Delivery.Controllers
 {
+    /// <summary>
+    /// Запросы, связанные с заказами
+    /// </summary>
+    /// <response code="401">Пользователь не авторизован</response>
     [Authorize]
     [ApiController]
     [Route("api/order")]
@@ -22,6 +26,14 @@ namespace Delivery.Controllers
             this.db = db;
         }
         
+        /// <summary>
+        /// Информация о заказе
+        /// </summary>
+        /// <param name="id">ID заказа</param>
+        /// <response code="200">Информация о заказе</response>
+        /// <response code="403">Пользователь не является клиентом, владельцем предприятия или курьером,
+        /// относящимся к данному заказу</response>
+        /// <response code="404">Данного заказа не существует</response>
         [HttpGet("{id}")]
         public async Task<IActionResult> GetOrder([FromRoute] long id)
         {
@@ -33,6 +45,13 @@ namespace Delivery.Controllers
             if (order == null)
             {
                 return NotFound();
+            }
+
+            if (order.UserLogin != User.Identity?.Name
+                || order.CourierLogin != User.Identity?.Name
+                || order.Store.OwnerLogin != User.Identity?.Name)
+            {
+                return Forbid();
             }
             
             var products = db.OrderProducts
@@ -59,6 +78,10 @@ namespace Delivery.Controllers
             return Ok(response);
         }
 
+        /// <summary>
+        /// Информация о заказах, сделанных пользователем
+        /// </summary>
+        /// <response code="200">Информация о заказах, сделанных пользователем</response>
         [HttpGet]
         public async Task<IActionResult> GetOrders()
         {
@@ -75,6 +98,14 @@ namespace Delivery.Controllers
             return Ok(order);
         }
         
+        /// <summary>
+        /// Информация о статусе заказа
+        /// </summary>
+        /// <param name="id">ID заказа</param>
+        /// <response code="200">Информация о статусе заказа</response>
+        /// <response code="403">Пользователь не является клиентом, владельцем предприятия или курьером,
+        /// относящимся к данному заказу</response>
+        /// <response code="404">Данного заказа не существует</response>
         [HttpGet("{id}/status")]
         public async Task<IActionResult> GetOrderStatus([FromRoute] long id)
         {
@@ -87,6 +118,13 @@ namespace Delivery.Controllers
             {
                 return NotFound();
             }
+            
+            if (order.UserLogin != User.Identity?.Name
+                || order.CourierLogin != User.Identity?.Name
+                || order.Store.OwnerLogin != User.Identity?.Name)
+            {
+                return Forbid();
+            }
 
             var response = new
             {
@@ -97,6 +135,15 @@ namespace Delivery.Controllers
             return Ok(response);
         }
         
+        /// <summary>
+        /// Оценка заказа
+        /// </summary>
+        /// <param name="id">ID заказа</param>
+        /// <param name="rating">Оценка заказа</param>
+        /// <response code="200">Заказ оценён</response>
+        /// <response code="400">Заказ уже оценён</response>
+        /// <response code="403">Оценивающий не является заказчиком</response>
+        /// <response code="404">Данного заказа нет</response>
         [HttpPost("{id}/rate")]
         public async Task<IActionResult> RateOrder([FromRoute] long id, [FromBody] RateOrder rating)
         {
@@ -108,6 +155,11 @@ namespace Delivery.Controllers
             if (order == null)
             {
                 return NotFound();
+            }
+            
+            if (order.UserLogin != User.Identity?.Name)
+            {
+                return Forbid();
             }
 
             if (order.Rating != null)
@@ -121,6 +173,11 @@ namespace Delivery.Controllers
             return Ok();
         }
 
+        /// <summary>
+        /// Подтвердить заказ
+        /// </summary>
+        /// <param name="addressId">ID адреса доставки</param>
+        /// <response code="200">Заказ подтверждён</response>
         [HttpPost("new/{addressId}")]
         public async Task<IActionResult> ConfirmOrder(long addressId)
         {
@@ -164,6 +221,13 @@ namespace Delivery.Controllers
             return Ok();
         }
         
+        /// <summary>
+        /// Отказаться от заказа
+        /// </summary>
+        /// <param name="id">ID заказа</param>
+        /// <response code="200">Заказ отменён</response>
+        /// <response code="403">Оценивающий не является заказчиком</response>
+        /// <response code="404">Данного заказа нет</response>
         [HttpPost("{id}/denied")]
         public async Task<IActionResult> DeniedOrder([FromRoute] long id)
         {
@@ -172,6 +236,11 @@ namespace Delivery.Controllers
             if (order == null)
             {
                 return NotFound();
+            }
+
+            if (order.UserLogin != User.Identity?.Name)
+            {
+                return Forbid();
             }
 
             order.Status = await db.OrderStatuses

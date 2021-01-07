@@ -194,7 +194,7 @@ namespace Delivery.Controllers
         /// Добавляет предприятие
         /// </summary>
         /// <param name="request">Параметры добавляемого предприятия</param>
-        /// <response code="200"></response>
+        /// <response code="200">Добавляет предприятие</response>
         [HttpPost("store")]
         public async Task<IActionResult> AddStore([FromBody] StoreRequest request)
         {

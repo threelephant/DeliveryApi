@@ -11,6 +11,11 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Delivery.Controllers
 {
+    /// <summary>
+    /// Запросы курьера
+    /// </summary>
+    /// <response code="401">Пользователь не авторизован</response>
+    /// <response code="403">Пользователь не является курьером</response>
     [Authorize]
     [AuthorizeCourier]
     [ApiController]
@@ -23,6 +28,13 @@ namespace Delivery.Controllers
             this.db = db;
         }
 
+        /// <summary>
+        /// Информация о курьере
+        /// </summary>
+        /// <param name="login">Логин курьера</param>
+        /// <response code="200">Информация о курьере</response>
+        /// <response code="403">Не является пользователем с введённым логином</response>
+        [AuthorizeByLogin]
         [HttpGet("{login}")]
         public async Task<IActionResult> GetCourier([FromRoute] string login)
         {
@@ -50,6 +62,14 @@ namespace Delivery.Controllers
             return Ok(result);
         }
 
+        /// <summary>
+        /// Заявка на работу курьером
+        /// </summary>
+        /// <param name="login">Логин пользователя</param>
+        /// <param name="courierRequest">Параметры заявки</param>
+        /// <response code="200">Заявка успешно подана</response>
+        /// <response code="400">Заявка уже подана</response>
+        /// <response code="403">Не является пользователем с введённым логином</response>
         [AuthorizeByLogin]
         [HttpPost("{login}")]
         public async Task<IActionResult> AddCourier([FromRoute] string login, [FromBody] CourierRequest courierRequest)
@@ -58,7 +78,8 @@ namespace Delivery.Controllers
 
             if (oldCourier != null)
             {
-                if (oldCourier.WorkStatusId == db.WorkCourierStatuses.FirstOrDefault(s => s.Name == "Одобрено").Id)
+                if (oldCourier.WorkStatusId == db.WorkCourierStatuses
+                    .FirstOrDefault(s => s.Name == "Одобрено")?.Id)
                 {
                     return BadRequest();
                 }
@@ -86,6 +107,14 @@ namespace Delivery.Controllers
             return Ok();
         }
 
+        /// <summary>
+        /// Меняет параметры курера
+        /// </summary>
+        /// <param name="login">Логин курьера</param>
+        /// <param name="request">Параметры запроса</param>
+        /// <response code="200">Параметры успешно изменены</response>
+        /// <response code="403">Не является пользователем с введённым логином</response>
+        /// <response code="404">Курьера с таким логином не существует</response>
         [AuthorizeByLogin]
         [HttpPut("{login}")]
         public async Task<IActionResult> ChangeCourier([FromRoute] string login, [FromBody] CourierChangeRequest request)
@@ -105,6 +134,13 @@ namespace Delivery.Controllers
             return Ok();
         }
         
+        /// <summary>
+        /// Увольнение курьера
+        /// </summary>
+        /// <param name="login">Логин пользователя</param>
+        /// <response code="204">Увольнение прошло успешно</response>
+        /// <response code="403">Не является пользователем с введённым логином</response>
+        /// <response code="404">Курьера с таким логином не существует</response>
         [AuthorizeByLogin]
         [HttpDelete("{login}")]
         public async Task<IActionResult> QuitCourier([FromRoute] string login)
@@ -123,6 +159,14 @@ namespace Delivery.Controllers
             return Ok();
         }
 
+        /// <summary>
+        /// Статус курьера
+        /// </summary>
+        /// <param name="login">Логин пользователя</param>
+        /// <response code="200">Статус курьера</response>
+        /// <response code="403">Не является пользователем с введённым логином</response>
+        /// <response code="404">Курьера с таким логином не существует</response>
+        [AuthorizeByLogin]
         [HttpGet("{login}/work")]
         public async Task<IActionResult> GetWorkStatus([FromRoute] string login)
         {
@@ -143,6 +187,11 @@ namespace Delivery.Controllers
             return Ok(response);
         }
         
+        /// <summary>
+        /// Список заказов-кандидатов для курьера
+        /// </summary>
+        /// <param name="title">Название города</param>
+        /// <response code="200">Список заказов-кандидатов для курьера</response>
         [HttpGet("locality/{title}")]
         public async Task<IActionResult> GetOrdersInLocality([FromRoute] string title)
         {
@@ -191,7 +240,13 @@ namespace Delivery.Controllers
 
             return Ok(orders);
         }
-        
+
+        /// <summary>
+        /// Принять заказ
+        /// </summary>
+        /// <param name="id">ID заказа</param>
+        /// <response code="200">Заказ принят</response>
+        /// <response code="404">Такого заказа не существует</response>
         [HttpPost("order/{id}/accept")]
         public async Task<IActionResult> AcceptOrder([FromRoute] long id)
         {
@@ -199,18 +254,25 @@ namespace Delivery.Controllers
                 .Where(o => o.Status.Name == "Предприятие приняло заказ"
                     && o.CourierLogin == null)
                 .FirstOrDefaultAsync(o => o.Id == id);
+            
             if (order == null)
             {
                 return NotFound();
             }
 
-            order.CourierLogin = User.Identity.Name;
+            order.CourierLogin = User.Identity?.Name;
             order.Status = await db.OrderStatuses.FirstOrDefaultAsync(s => s.Name == "Курьер принял заказ");
 
             await db.SaveChangesAsync();
             return Ok();
         }
         
+        /// <summary>
+        /// Уведомить о взятие заказа
+        /// </summary>
+        /// <param name="id">ID заказа</param>
+        /// <response code="200">Заказ взят</response>
+        /// <response code="404">Такого заказа не существует</response>
         [HttpPost("order/{id}/take")]
         public async Task<IActionResult> TakeOrder([FromRoute] long id)
         {
@@ -218,6 +280,7 @@ namespace Delivery.Controllers
                 .Where(o => o.Status.Name == "Заказ готов"
                     && o.CourierLogin == User.Identity.Name)
                 .FirstOrDefaultAsync(o => o.Id == id);
+            
             if (order == null)
             {
                 return NotFound();
@@ -230,6 +293,12 @@ namespace Delivery.Controllers
             return Ok();
         }
         
+        /// <summary>
+        /// Уведомить о доставке клиенту заказа
+        /// </summary>
+        /// <param name="id">ID заказа</param>
+        /// <response code="200">Заказ доставлен</response>
+        /// <response code="404">Такого заказа не существует</response>
         [HttpPost("order/{id}/deliver")]
         public async Task<IActionResult> DeliverOrder([FromRoute] long id)
         {
@@ -237,6 +306,7 @@ namespace Delivery.Controllers
                 .Where(o => o.Status.Name == "Курьер взял заказ"
                     && o.CourierLogin == User.Identity.Name)
                 .FirstOrDefaultAsync(o => o.Id == id);
+            
             if (order == null)
             {
                 return NotFound();
@@ -249,6 +319,12 @@ namespace Delivery.Controllers
             return Ok();
         }
         
+        /// <summary>
+        /// Отказаться от заказа
+        /// </summary>
+        /// <param name="id">ID заказа</param>
+        /// <response code="200">Отказ успешно оформлен</response>
+        /// <response code="404">Такого заказа не существует</response>
         [HttpPost("order/{id}/deny")]
         public async Task<IActionResult> DenyOrder([FromRoute] long id)
         {

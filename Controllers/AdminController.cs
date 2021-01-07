@@ -9,6 +9,11 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Delivery.Controllers
 {
+    /// <summary>
+    /// Запросы администратора
+    /// </summary>
+    /// <response code="401">Пользователь не авторизован</response>
+    /// <response code="403">Пользователь не является администратором</response>
     [Authorize(Roles = "admin")]
     [ApiController]
     [Route("api/admin")]
@@ -21,6 +26,14 @@ namespace Delivery.Controllers
             this.db = db;
         }
         
+        /// <summary>
+        /// Список пользователей по параметрам
+        /// </summary>
+        /// <param name="city">Город</param>
+        /// <param name="order">Сортировка</param>
+        /// <param name="limit">Количество пользоателей</param>
+        /// <param name="offset">Смещение</param>
+        /// <response code="200">Список пользователей по параметрам</response>
         [HttpGet("user")]
         public async Task<IActionResult> GetUsers(string city, string order = "loginAsc", 
             int limit = 10, int offset = 0)
@@ -64,6 +77,10 @@ namespace Delivery.Controllers
             return Ok(response);
         }
         
+        /// <summary>
+        /// Список курьеров-кандидатов
+        /// </summary>
+        /// <response code="200">Список курьеров-кандидатов</response>
         [HttpGet("courier/candidate")]
         public async Task<IActionResult> GetCouriersCandidate()
         {
@@ -89,6 +106,12 @@ namespace Delivery.Controllers
             return Ok(couriers);
         }
         
+        /// <summary>
+        /// Список предприятий-кандидатов
+        /// </summary>
+        /// <param name="city">Город</param>
+        /// <param name="order">Сортировка</param>
+        /// <response code="200">Список предприятий-кандидатов</response>
         [HttpGet("store/candidate")]
         public async Task<IActionResult> GetStoresCandidate([FromRoute] string city, string order)
         {
@@ -125,6 +148,12 @@ namespace Delivery.Controllers
             return Ok(stores);
         }
         
+        /// <summary>
+        /// Принять курьера на работу
+        /// </summary>
+        /// <param name="login">Логин курьера</param>
+        /// <response code="200">Курьер принят на работу</response>
+        /// <response code="404">Кандидат не найден</response>
         [HttpPost("courier/{login}/accept")]
         public async Task<IActionResult> AcceptCourier([FromRoute] string login)
         {
@@ -144,6 +173,12 @@ namespace Delivery.Controllers
             return Ok();
         }
         
+        /// <summary>
+        /// Отклонить заявку курьера на работу
+        /// </summary>
+        /// <param name="login">Логин курьера</param>
+        /// <response code="200">Курьер не принят на работу</response>
+        /// <response code="404">Кандидат не найден</response>
         [HttpPost("courier/{login}/deny")]
         public async Task<IActionResult> DenyCourier([FromRoute] string login)
         {
@@ -163,6 +198,12 @@ namespace Delivery.Controllers
             return Ok();
         }
         
+        /// <summary>
+        /// Принять предприятие
+        /// </summary>
+        /// <param name="id">ID предприятия</param>
+        /// <response code="200">Предприятие принято</response>
+        /// <response code="404">Предприятие не найдено</response>
         [HttpPost("store/{id}/accept")]
         public async Task<IActionResult> AcceptStore([FromRoute] long id)
         {
@@ -182,6 +223,12 @@ namespace Delivery.Controllers
             return Ok();
         }
         
+        /// <summary>
+        /// Не принять предприятие
+        /// </summary>
+        /// <param name="id">ID предприятия</param>
+        /// <response code="200">Предприятие не принято</response>
+        /// <response code="404">Предприятие не найдено</response>
         [HttpPost("store/{id}/deny")]
         public async Task<IActionResult> DenyStore([FromRoute] long id)
         {

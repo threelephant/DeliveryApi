@@ -15,6 +15,9 @@ using Microsoft.IdentityModel.Tokens;
 
 namespace Delivery.Controllers
 {
+    /// <summary>
+    /// Запросы, связанные с авторизацией
+    /// </summary>
     [ApiController]
     [Route("api/account")]
     public class AccountController : ControllerBase
@@ -25,6 +28,21 @@ namespace Delivery.Controllers
             this.db = db;
         }
 
+        /// <summary>
+        /// Авторизация
+        /// </summary>
+        /// <remarks>
+        ///     Sample request:
+        ///
+        ///     POST /api/account/login
+        ///     {
+        ///         "username": "username",
+        ///         "password": "password"
+        ///     }
+        /// </remarks>
+        /// <param name="loginModel">Параметры авторизации</param>
+        /// <response code="200">Авторизация успешна прошла</response>
+        /// <response code="400">Некорректные логин и/или пароль</response>
         [HttpPost("login")]
         public async Task<IActionResult> Login([FromBody] LoginModel loginModel)
         {
@@ -55,6 +73,22 @@ namespace Delivery.Controllers
             return Ok(new { loginModel.username, token });
         }
 
+        /// <summary>
+        /// Регистрация
+        /// </summary>
+        /// <remarks>
+        ///     Sample request:
+        ///
+        ///     POST /api/account/register
+        ///     {
+        ///         "username": "username",
+        ///         "password": "password",
+        ///         "confirm_password": "password"
+        ///     }
+        /// </remarks>
+        /// <param name="registerModel">Параметры регистрации</param>
+        /// <response code="200">Успешная регистрация</response>
+        /// <response code="400">Пароли не совпадают и/или пользователь с таким логином уже существует</response>
         [HttpPost("register")]
         public async Task<IActionResult> Register([FromBody] RegisterModel registerModel)
         {
@@ -96,10 +130,34 @@ namespace Delivery.Controllers
             return Ok(new { registerModel.username, token });
         }
 
+        /// <summary>
+        /// Сброс пароля
+        /// </summary>
+        /// <remarks>
+        ///     Sample request:
+        ///
+        ///     POST /api/account/reset
+        ///     {
+        ///         "username": "username",
+        ///         "old_password": "password",
+        ///         "new_password": "new_password",
+        ///         "confirm_new_password": "new_password"
+        ///     }
+        /// </remarks>
+        /// <param name="resetModel">Параметры сброса</param>
+        /// <response code="200">Успешный сброс</response>
+        /// <response code="400">Пароли не совпадают или некорректные логин и/или пароль</response>
+        /// <response code="401">Пользователь не авторизован</response>
+        /// <response code="403">Не является пользователем с введённым логином</response>
         [Authorize]
         [HttpPost("reset")]
         public async Task<IActionResult> Reset([FromBody] ResetModel resetModel)
         {
+            if (resetModel.username != User.Identity?.Name)
+            {
+                return Forbid();
+            }
+            
             if (resetModel.new_password != resetModel.confirm_new_password)
             {
                 return BadRequest(new { error = "Пароли не совпадают" });
