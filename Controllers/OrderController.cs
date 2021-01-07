@@ -1,12 +1,12 @@
 using System;
 using System.Linq;
 using System.Threading.Tasks;
-using Delivery.Domain.Order;
+using Delivery.Contracts.Order;
 using Delivery.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using OrderStatus = Delivery.Domain.Order.OrderStatus;
+using OrderStatus = Delivery.Contracts.Order.OrderStatus;
 
 namespace Delivery.Controllers
 {

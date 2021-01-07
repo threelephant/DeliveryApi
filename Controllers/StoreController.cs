@@ -3,7 +3,7 @@ using System.Globalization;
 using System.Linq;
 using System.Threading.Tasks;
 using Delivery.Cache;
-using Delivery.Domain.Store;
+using Delivery.Contracts.Store;
 using Delivery.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;

@@ -4,7 +4,7 @@ using System.IdentityModel.Tokens.Jwt;
 using System.Linq;
 using System.Security.Claims;
 using System.Threading.Tasks;
-using Delivery.Domain.Account;
+using Delivery.Contracts.Account;
 using Delivery.Installers;
 using Delivery.Models;
 using Microsoft.AspNetCore.Authorization;
@@ -92,11 +92,6 @@ namespace Delivery.Controllers
         [HttpPost("register")]
         public async Task<IActionResult> Register([FromBody] RegisterModel registerModel)
         {
-            if (registerModel.password != registerModel.confirmPassword)
-            {
-                return BadRequest(new { error = "Пароли не совпадают" });
-            }
-            
             var user = await db.Users.FirstOrDefaultAsync(u => u.Login == registerModel.username);
             if (user != null)
             {
@@ -156,11 +151,6 @@ namespace Delivery.Controllers
             if (resetModel.username != User.Identity?.Name)
             {
                 return Forbid();
-            }
-            
-            if (resetModel.new_password != resetModel.confirm_new_password)
-            {
-                return BadRequest(new { error = "Пароли не совпадают" });
             }
             
             var user = await db.Users.FirstOrDefaultAsync(u => u.Login == resetModel.username);

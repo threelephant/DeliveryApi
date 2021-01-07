@@ -1,9 +1,9 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using Delivery.Domain;
-using Delivery.Domain.Account;
-using Delivery.Domain.User;
+using Delivery.Contracts;
+using Delivery.Contracts.Account;
+using Delivery.Contracts.User;
 using Delivery.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
