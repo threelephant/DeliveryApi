@@ -3,16 +3,17 @@ using System;
 using Delivery.Models;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
-using NpgsqlTypes;
 
 namespace Delivery.Migrations
 {
     [DbContext(typeof(deliveryContext))]
-    partial class deliveryContextModelSnapshot : ModelSnapshot
+    [Migration("20210107094708_AddDescriptionStoreAndProduct")]
+    partial class AddDescriptionStoreAndProduct
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -261,9 +262,6 @@ namespace Delivery.Migrations
                         .HasMaxLength(250)
                         .HasColumnType("character varying(250)");
 
-                    b.Property<NpgsqlTsVector>("DocumentWithWeights")
-                        .HasColumnType("tsvector");
-
                     b.Property<decimal>("Price")
                         .HasColumnType("money");
 
@@ -279,9 +277,6 @@ namespace Delivery.Migrations
                         .HasColumnType("integer");
 
                     b.HasKey("Id");
-
-                    b.HasIndex("DocumentWithWeights")
-                        .HasMethod("gin");
 
                     b.HasIndex(new[] { "StoreId" }, "IX_Product_StoreId");
 
@@ -348,9 +343,6 @@ namespace Delivery.Migrations
                         .HasMaxLength(500)
                         .HasColumnType("character varying(500)");
 
-                    b.Property<NpgsqlTsVector>("DocumentWithWeights")
-                        .HasColumnType("tsvector");
-
                     b.Property<TimeSpan?>("EndWorking")
                         .HasColumnType("time without time zone");
 
@@ -368,9 +360,6 @@ namespace Delivery.Migrations
                         .HasColumnType("character varying(150)");
 
                     b.HasKey("Id");
-
-                    b.HasIndex("DocumentWithWeights")
-                        .HasMethod("gin");
 
                     b.HasIndex(new[] { "AddressId" }, "IX_Stores_AddressId");
 

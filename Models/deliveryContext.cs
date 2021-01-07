@@ -247,6 +247,11 @@ namespace Delivery.Models
                     .IsRequired()
                     .HasMaxLength(200);
 
+                entity.Property(e => e.Description)
+                    .HasMaxLength(250);
+
+                entity.HasIndex(e => e.DocumentWithWeights).HasMethod("gin");
+
                 entity.HasOne(d => d.Store)
                     .WithMany(p => p.Products)
                     .HasForeignKey(d => d.StoreId)
@@ -309,6 +314,11 @@ namespace Delivery.Models
                 entity.Property(e => e.Title)
                     .IsRequired()
                     .HasMaxLength(150);
+
+                entity.Property(e => e.Description)
+                    .HasMaxLength(500);
+
+                entity.HasIndex(e => e.DocumentWithWeights).HasMethod("gin");
 
                 entity.HasOne(d => d.Address)
                     .WithMany(p => p.Stores)
