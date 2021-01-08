@@ -205,5 +205,63 @@ namespace Delivery.Controllers
 
             return Ok();
         }
+
+        /// <summary>
+        /// Поиск продуктов
+        /// </summary>
+        /// <param name="query">Запрос</param>
+        /// <response code="200">Результат поиска</response>
+        [HttpGet]
+        [Route("search/products")]
+        public async Task<IActionResult> SearchProducts([FromQuery] string query)
+        {
+            var products = db.Products
+                .FromSqlRaw(
+                    "select * from \"Product\"\n" +
+                    $"where \"Product\".\"DocumentWithWeights\" @@ plainto_tsquery('{query}')\n" +
+                    $"order by ts_rank(\"Product\".\"DocumentWithWeights\", plainto_tsquery('{query}')) desc"
+                )
+                .ToList()
+                .Select(p => new
+                {
+                    id = p.Id,
+                    title = p.Title,
+                    description = p.Description,
+                    price = p.Price,
+                    store_title = db.Stores.FirstOrDefault(s => s.Id == p.StoreId)?.Title
+                });
+
+            return Ok(products);
+        }
+        
+        /// <summary>
+        /// Поиск магазинов
+        /// </summary>
+        /// <param name="query">Запрос</param>
+        /// <response code="200">Результат поиска</response>
+        [HttpGet]
+        [Route("search")]
+        public async Task<IActionResult> SearchStores([FromQuery] string query)
+        {
+            var stores = db.Stores
+                .FromSqlRaw(
+                    "select * from \"Stores\"\n" +
+                    $"where \"Stores\".\"DocumentWithWeights\" @@ plainto_tsquery('{query}')\n" +
+                    $"order by ts_rank(\"Stores\".\"DocumentWithWeights\", plainto_tsquery('{query}')) desc"
+                )
+                .ToList()
+                .Select(s => new
+                {
+                    id = s.Id,
+                    title = s.Title,
+                    description = s.Description,
+                    categories = db.StoreCategories
+                        .Where(sc => sc.StoreId == s.Id)
+                        .Select(sc => sc.Category.Title)
+                        .ToList()
+                });
+        
+            return Ok(stores);
+        }
     }
 }
