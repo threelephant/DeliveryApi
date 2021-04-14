@@ -81,6 +81,10 @@ namespace Delivery.Controllers
         ///
         ///     POST /api/account/register
         ///     {
+        ///         "first_name": "first_name",
+        ///         "last_name": "last_name",
+        ///         "middle_name": "middle_name",
+        ///         "phone": "+70008001343",
         ///         "username": "username",
         ///         "password": "password",
         ///         "confirm_password": "password"
@@ -110,8 +114,10 @@ namespace Delivery.Controllers
             var newUser = new User
             {
                 Login = registerModel.username,
-                FirstName = "",
-                LastName = "",
+                FirstName = registerModel.first_name,
+                LastName = registerModel.last_name,
+                MiddleName = String.IsNullOrWhiteSpace(registerModel.middle_name) ? null : registerModel.middle_name,
+                Phone = String.IsNullOrWhiteSpace(registerModel.phone) ? null : registerModel.phone,
                 Role = db.Roles.FirstOrDefault(r => r.Name == "user"),
                 Password = hashedPassword,
                 Salt = salt,
