@@ -17,7 +17,6 @@ namespace Delivery.Controllers
     /// <response code="401">Пользователь не авторизован</response>
     /// <response code="403">Пользователь не является курьером</response>
     [Authorize]
-    [AuthorizeCourier]
     [ApiController]
     [Route("api/courier")]
     public class CourierController : ControllerBase
@@ -116,6 +115,7 @@ namespace Delivery.Controllers
         /// <response code="403">Не является пользователем с введённым логином</response>
         /// <response code="404">Курьера с таким логином не существует</response>
         [AuthorizeByLogin]
+        [AuthorizeCourier]
         [HttpPut("{login}")]
         public async Task<IActionResult> ChangeCourier([FromRoute] string login, [FromBody] CourierChangeRequest request)
         {
@@ -142,6 +142,7 @@ namespace Delivery.Controllers
         /// <response code="403">Не является пользователем с введённым логином</response>
         /// <response code="404">Курьера с таким логином не существует</response>
         [AuthorizeByLogin]
+        [AuthorizeCourier]
         [HttpDelete("{login}")]
         public async Task<IActionResult> QuitCourier([FromRoute] string login)
         {
@@ -167,6 +168,7 @@ namespace Delivery.Controllers
         /// <response code="403">Не является пользователем с введённым логином</response>
         /// <response code="404">Курьера с таким логином не существует</response>
         [AuthorizeByLogin]
+        [AuthorizeCourier]
         [HttpGet("{login}/work")]
         public async Task<IActionResult> GetWorkStatus([FromRoute] string login)
         {
@@ -239,6 +241,155 @@ namespace Delivery.Controllers
                 .ToListAsync();
 
             return Ok(orders);
+        }
+        
+        /// <summary>
+        /// Список текущих заказов для курьера
+        /// </summary>
+        /// <response code="200">Список текущих заказов для курьера</response>
+        [HttpGet("current")]
+        public async Task<IActionResult> GetCurrentOrders()
+        {
+            var orders = await db.Orders
+                .Where(o => o.CourierLogin == User.Identity.Name
+                            && o.Status.Name == "Заказ готов"
+                            || o.Status.Name == "Курьер принял заказ"
+                            || o.Status.Name == "Курьер взял заказ")
+                .Select(o => new
+                {
+                    id = o.Id,
+                    is_after = o.Status.Name == "Курьер взял заказ",
+                    address = $"{o.Store.Address.Street}, {o.Store.Address.Building}",
+                    info = $"Отправитель: {o.Store.Title}, Заказчик: {o.UserLoginNavigation.FirstName}",
+                    status = o.Status.Name,
+                })
+                .ToListAsync();
+
+            return Ok(orders);
+        }
+
+        /// <summary>
+        /// Список старых заказов для курьера
+        /// </summary>
+        /// <response code="200">Список текущих заказов для курьера</response>
+        [HttpGet("old")]
+        public async Task<IActionResult> GetOldOrders()
+        {
+            var orders = await db.Orders
+                .Where(o => o.CourierLogin == User.Identity.Name
+                            && o.Status.Name == "Пользователь отказался от заказа"
+                            || o.Status.Name == "Заказ доставлен"
+                            || o.Status.Name == "Курьер отказался от заказа"
+                            || o.Status.Name == "Предприятие отказалось от заказа")
+                .Select(o => new
+                {
+                    id = o.Id,
+                    info = $"Заказ от {o.OrderDate}",
+                    status = o.Status.Name
+                })
+                .ToListAsync();
+
+            return Ok(orders);
+        }
+        
+        //TODO: обработать исключения
+        /// <summary>
+        /// Информация о новом заказе
+        /// </summary>
+        /// <response code="200">Информация о новом заказе</response>
+        [HttpGet("new/{id}")]
+        public async Task<IActionResult> GetNewOrder(long id)
+        {
+            var order = await db.Orders
+                .Include(o => o.Store)
+                    .ThenInclude(s => s.Address)
+                .Include(o => o.OrderProducts)
+                    .ThenInclude(op => op.Product)
+                .FirstOrDefaultAsync(o => o.Id == id);
+            
+            return Ok(new
+            {
+                id = order.Id,
+                address = $"{order.Store.Address.Street}, {order.Store.Address.Building}",
+                title = order.Store.Title,
+                weight = order.OrderProducts.Sum(op => op.Product.Weight * op.Count),
+            });
+        }
+        
+        //TODO: обработать исключения
+        /// <summary>
+        /// Информация о текущем заказе
+        /// </summary>
+        /// <response code="200">Информация о текущем заказе</response>
+        [HttpGet("current/{id}")]
+        public async Task<IActionResult> GetCurrentOrder(long id)
+        {
+            var order = await db.Orders
+                .Include(o => o.Status)
+                .Include(o => o.UserLoginNavigation)
+                .Include(o => o.Address)
+                .Include(o => o.Store)
+                .ThenInclude(s => s.Address)
+                .Include(o => o.OrderProducts)
+                .ThenInclude(op => op.Product)
+                .FirstOrDefaultAsync(o => o.Id == id);
+
+            return Ok(new
+            {
+                id = order.Id,
+                time = order.TakingDate,
+                status = order.Status.Name,
+                price = order.OrderProducts.Sum(op => op.Count * op.Product.Price),
+                weight = order.OrderProducts.Sum(op => op.Product.Weight * op.Count),
+                customer = order.UserLoginNavigation.FirstName,
+                customer_address = $"{order.Address.Street}, {order.Address.Building}, кв. {order.Address.Apartment}",
+                store = order.Store.Title,
+                store_address = $"{order.Store.Address.Street}, {order.Store.Address.Building}",
+                products = order.OrderProducts.Select(op => new
+                {
+                    title = op.Product.Title,
+                    count = op.Count,
+                    weight = op.Product.Weight * op.Count,
+                }),
+            });
+        }
+        
+        //TODO: обработать исключения
+        /// <summary>
+        /// Информация о текущем заказе
+        /// </summary>
+        /// <response code="200">Информация о текущем заказе</response>
+        [HttpGet("old/{id}")]
+        public async Task<IActionResult> GetOldOrder(long id)
+        {
+            var order = await db.Orders
+                .Include(o => o.Status)
+                .Include(o => o.UserLoginNavigation)
+                .Include(o => o.Address)
+                .Include(o => o.Store)
+                    .ThenInclude(s => s.Address)
+                .Include(o => o.OrderProducts)
+                    .ThenInclude(op => op.Product)
+                .FirstOrDefaultAsync(o => o.Id == id);
+            
+            return Ok(new
+            {
+                id = order.Id,
+                time = order.DeliveryDate,
+                status = order.Status.Name,
+                price = order.OrderProducts.Sum(op => op.Count * op.Product.Price),
+                weight = order.OrderProducts.Sum(op => op.Product.Weight * op.Count),
+                customer = order.UserLoginNavigation.FirstName,
+                customer_address = $"{order.Address.Street}, {order.Address.Building}",
+                store = order.Store.Title,
+                store_address = $"{order.Store.Address.Street}, {order.Store.Address.Building}",
+                products = order.OrderProducts.Select(op => new
+                {
+                    title = op.Product.Title,
+                    count = op.Count,
+                    weight = op.Product.Weight * op.Count,
+                }),
+            });
         }
 
         /// <summary>

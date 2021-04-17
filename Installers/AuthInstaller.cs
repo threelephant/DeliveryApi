@@ -33,7 +33,7 @@ namespace Delivery.Installers
         public const string ISSUER = "DeliveryApiServer";
         public const string AUDIENCE = "DeliveryApiClient";
         private const string KEY = "qwertySECRET_!5432";
-        public const int LIFETIME = 1;
+        public const int LIFETIME = 1000;
 
         public static SymmetricSecurityKey GetSymmetricSecurityKey()
         {

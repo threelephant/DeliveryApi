@@ -47,9 +47,9 @@ namespace Delivery.Controllers
                 return NotFound();
             }
 
-            if (order.UserLogin != User.Identity?.Name
-                || order.CourierLogin != User.Identity?.Name
-                || order.Store.OwnerLogin != User.Identity?.Name)
+            if (!(order.UserLogin == User.Identity?.Name
+                || order.CourierLogin == User.Identity?.Name
+                || order.Store.OwnerLogin == User.Identity?.Name))
             {
                 return Forbid();
             }

@@ -126,7 +126,7 @@ namespace Delivery.Controllers
         public async Task<IActionResult> GetMenu([FromRoute] long id)
         {
             var isStoreExist = db.Stores.Any(s => s.Id == id);
-            if (isStoreExist)
+            if (!isStoreExist)
             {
                 return NotFound();
             }
