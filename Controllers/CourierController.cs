@@ -252,9 +252,9 @@ namespace Delivery.Controllers
         {
             var orders = await db.Orders
                 .Where(o => o.CourierLogin == User.Identity.Name
-                            && o.Status.Name == "Заказ готов"
+                            && (o.Status.Name == "Заказ готов"
                             || o.Status.Name == "Курьер принял заказ"
-                            || o.Status.Name == "Курьер взял заказ")
+                            || o.Status.Name == "Курьер взял заказ"))
                 .Select(o => new
                 {
                     id = o.Id,
@@ -277,10 +277,10 @@ namespace Delivery.Controllers
         {
             var orders = await db.Orders
                 .Where(o => o.CourierLogin == User.Identity.Name
-                            && o.Status.Name == "Пользователь отказался от заказа"
+                            && (o.Status.Name == "Пользователь отказался от заказа"
                             || o.Status.Name == "Заказ доставлен"
                             || o.Status.Name == "Курьер отказался от заказа"
-                            || o.Status.Name == "Предприятие отказалось от заказа")
+                            || o.Status.Name == "Предприятие отказалось от заказа"))
                 .Select(o => new
                 {
                     id = o.Id,
