@@ -33,7 +33,6 @@ namespace Delivery.Controllers
         /// <param name="offset">Смещение</param>
         /// <response code="200">Возвращает список предприятий</response>
         [HttpGet]
-        [Cached(600)]
         public async Task<IActionResult> GetStores(string city, 
             StoresOrder order = StoresOrder.IdAsc, int limit = 10, int offset = 0)
         {
@@ -261,6 +260,41 @@ namespace Delivery.Controllers
                         .ToList()
                 });
         
+            return Ok(stores);
+        }
+
+        /// <summary>
+        /// Список категорий
+        /// </summary>
+        /// <response code="200">Список категорий</response>
+        [HttpGet]
+        [Route("categories")]
+        public async Task<IActionResult> GetCategories()
+        {
+            var categories = db.CategoryStores
+                .Select(c => c.Title);
+
+            return Ok(categories);
+        }
+        
+        /// <summary>
+        /// Список кмагазинов по категории
+        /// </summary>
+        /// <response code="200">Список магазинов по категории</response>
+        [HttpGet]
+        [Route("category/{category}")]
+        public async Task<IActionResult> GetStoresByCategories([FromRoute] string category)
+        {
+            var stores = db.StoreCategories
+                .Include(sc => sc.Store)
+                .Include(sc => sc.Category)
+                .Where(sc => sc.Category.Title == category)
+                .Select(sc => new
+                {
+                    id = sc.StoreId,
+                    title = sc.Store.Title,
+                });
+
             return Ok(stores);
         }
     }

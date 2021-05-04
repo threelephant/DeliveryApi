@@ -126,10 +126,12 @@ namespace Delivery.Controllers
             
             var orders = db.Orders
                 .Where(o => o.StoreId == id)
+                .Include(o => o.Status)
                 .Select(o => new
                 {
                     id = o.Id,
                     first_name = o.UserLoginNavigation.FirstName,
+                    status = o.Status.Name,
                     sum = db.OrderProducts
                         .Include(p => p.Product)
                         .Where(p => p.OrderId == o.Id)
