@@ -260,6 +260,19 @@ namespace Delivery.Controllers
                 switch (op)
                 {
                     case PatchOperation.add:
+                    {
+                        var crtItm = await db.Carts
+                            .FirstOrDefaultAsync(c => c.ProductId == cartItem.Product.Id
+                                                      && c.UserLogin == login);
+
+                        if (crtItm != null)
+                        {
+                            crtItm.Count += cartItem.Product.Count;
+                            db.Carts.Update(crtItm);
+                            
+                            break;
+                        }
+                        
                         await db.Carts.AddAsync(new Cart
                         {
                             UserLogin = login,
@@ -267,6 +280,7 @@ namespace Delivery.Controllers
                             Count = cartItem.Product.Count
                         });
                         break;
+                    }
                     case PatchOperation.remove:
                     {
                         var crtItm = await db.Carts
@@ -275,30 +289,101 @@ namespace Delivery.Controllers
 
                         if (crtItm != null)
                         {
-                            db.Carts.Remove(crtItm);
-                        }
-
-                        break;
-                    }
-                    case PatchOperation.replace:
-                    {
-                        var crtItm = await db.Carts
-                            .FirstOrDefaultAsync(c => c.ProductId == cartItem.Product.Id
-                                                      && c.UserLogin == login);
-                    
-                        if (crtItm != null)
-                        {
-                            crtItm.Count = cartItem.Product.Count;
+                            crtItm.Count -= cartItem.Product.Count;
                             db.Carts.Update(crtItm);
+
+                            if (crtItm.Count <= 0)
+                            {
+                                db.Carts.Remove(crtItm);
+                                await db.SaveChangesAsync();
+                            }
                         }
 
                         break;
                     }
+                    default: return NotFound("Operation not found");
                 }
             }
 
             await db.SaveChangesAsync();
             return Ok();
+        }
+
+        [AuthorizeByLogin]
+        [HttpPost("{login}/cart/{id}/add")]
+        public async Task<IActionResult> AddCartProduct([FromRoute] string login, [FromRoute] long id)
+        {
+            var crtItm = await db.Carts
+                .FirstOrDefaultAsync(c => c.ProductId == id && c.UserLogin == login);
+
+            if (crtItm != null)
+            {
+                crtItm.Count += 1;
+                db.Carts.Update(crtItm);
+                await db.SaveChangesAsync();
+                            
+                return Ok(crtItm);
+            }
+
+            var newCrtItm = new Cart
+            {
+                UserLogin = login,
+                ProductId = id,
+                Count = 1,
+            };
+                        
+            await db.Carts.AddAsync(newCrtItm);
+            await db.SaveChangesAsync();
+
+            return Ok(newCrtItm);
+        }
+
+        [AuthorizeByLogin]
+        [HttpPost("{login}/cart/{id}/remove")]
+        public async Task<IActionResult> RemoveCartProduct([FromRoute] string login, [FromRoute] long id)
+        {
+            var crtItm = await db.Carts
+                .FirstOrDefaultAsync(c => c.ProductId == id && c.UserLogin == login);
+
+            if (crtItm != null)
+            {
+                crtItm.Count -= 1;
+                db.Carts.Update(crtItm);
+
+                if (crtItm.Count <= 0)
+                {
+                    db.Carts.Remove(crtItm);
+                }
+            }
+            
+            await db.SaveChangesAsync();
+            return Ok(crtItm);
+        }
+
+        [AuthorizeByLogin]
+        [HttpGet("{login}/cart/{id}")]
+        public async Task<IActionResult> GetCartProduct([FromRoute] string login, [FromRoute] long id)
+        {
+            var crtItm = await db.Carts
+                .FirstOrDefaultAsync(c => c.ProductId == id && c.UserLogin == login);
+
+            if (crtItm == null)
+            {
+                return NotFound();
+            }
+
+            return Ok(crtItm);
+        }
+
+        [AuthorizeByLogin]
+        [HttpDelete("{login}/cart")]
+        public async Task<IActionResult> ClearCart([FromRoute] string login)
+        {
+            var userCart = db.Carts.Where(c => c.UserLogin == login);
+            db.Carts.RemoveRange(userCart);
+
+            await db.SaveChangesAsync();
+            return NoContent();
         }
     }
 }

@@ -25,6 +25,8 @@ namespace Delivery.Installers
                 options.UseNpgsql(configuration.GetConnectionString("DefaultConnection"));
                 options.LogTo(Console.WriteLine);
             });
+            
+            services.AddCors();
         }
     }
 }

@@ -45,6 +45,13 @@ namespace Delivery
             // app.UseHttpsRedirection();
 
             app.UseRouting();
+            
+            app.UseCors(builder => 
+            {
+                builder.AllowAnyOrigin();
+                builder.AllowAnyMethod();
+                builder.AllowAnyHeader();
+            });
 
             app.UseAuthentication();
             app.UseAuthorization();
