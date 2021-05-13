@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -207,12 +208,13 @@ namespace Delivery.Controllers
                 .Where(aua => aua.ua.UserLogin == User.Identity.Name)
                 .Select(a => new
                 {
+                    id = a.a.Id,
                     locality = a.a.Locality.Name,
                     street = a.a.Street,
-                    building =  a.a.Building,
+                    building = a.a.Building,
                     apartment = a.a.Apartment,
                     entrance = a.a.Entrance,
-                    level = a.a.Level
+                    level = a.a.Level,
                 })
                 .ToListAsync();
 
@@ -383,6 +385,114 @@ namespace Delivery.Controllers
             db.Carts.RemoveRange(userCart);
 
             await db.SaveChangesAsync();
+            return NoContent();
+        }
+
+        [AuthorizeByLogin]
+        [HttpPost("{login}/address")]
+        public async Task<IActionResult> AddAddress([FromRoute] string login, [FromBody] UserAddresses addressRes)
+        {
+            var add = await db.Addresses.FirstOrDefaultAsync(a => a.Street == addressRes.street
+                                                                            && a.Building == addressRes.building
+                                                                            && a.Apartment == addressRes.apartment
+                                                                            && a.Entrance == addressRes.entrance
+                                                                            && a.Level == addressRes.level);
+
+            if (add != null)
+            {
+                var userAdd = new UserAddress
+                {
+                    Address = add,
+                    UserLogin = login,
+                };
+                await db.UserAddresses.AddAsync(userAdd);
+                await db.SaveChangesAsync();
+
+                return Ok();
+            }
+            
+            var address = new Address
+            {
+                LocalityId = 1,
+                Street = addressRes.street,
+                Building = addressRes.building,
+                Apartment = addressRes.apartment,
+                Entrance = addressRes.entrance,
+                Level = addressRes.level,
+            };
+
+            await db.Addresses.AddAsync(address);
+            await db.UserAddresses.AddAsync(new UserAddress
+            {
+                Address = address,
+                UserLogin = login,
+            });
+
+            
+            await db.SaveChangesAsync();
+
+            var newAddress = await db.Addresses.FirstOrDefaultAsync(a => a.Street == addressRes.street
+                                                                          && a.Building == addressRes.building
+                                                                          && a.Apartment == addressRes.apartment
+                                                                          && a.Entrance == addressRes.entrance
+                                                                          && a.Level == addressRes.level);
+
+            var addressResponse = new
+            {
+                id = newAddress.Id,
+                street = newAddress.Street,
+                building = newAddress.Building,
+                apartment = newAddress.Apartment,
+                entrance = newAddress.Entrance,
+                level = newAddress.Level,
+            };
+            return Ok(addressResponse);
+        }
+
+        [AuthorizeByLogin]
+        [HttpPut("{login}/address/{id}")]
+        public async Task<IActionResult> ChangeAddress([FromRoute] string login, 
+            [FromRoute] long id, 
+            [FromBody] UserAddresses addressReq)
+        {
+            var address = await db.Addresses.FirstOrDefaultAsync(a => a.Id == id);
+            address.Street = addressReq.street;
+            address.Building = addressReq.building;
+            address.Apartment = addressReq.apartment;
+            address.Entrance = addressReq.entrance;
+            address.Level = addressReq.level;
+            
+            db.Addresses.Update(address);
+            await db.SaveChangesAsync();
+
+            var addressRes = new
+            {
+                id = address.Id,
+                street = address.Street,
+                building = address.Building,
+                apartment = address.Apartment,
+                entrance = address.Entrance,
+                level = address.Level,
+            };
+
+            return Ok(addressRes);
+        }
+
+        [AuthorizeByLogin]
+        [HttpDelete("{login}/address/{id}")]
+        public async Task<IActionResult> DeleteAddress([FromRoute] string login, [FromRoute] long id)
+        {
+            var userAddress = await db.UserAddresses.FirstOrDefaultAsync(ua => ua.UserLogin == login
+                                                                            && ua.AddressId == id);
+
+            if (userAddress == null)
+            {
+                return NotFound();
+            }
+
+            db.UserAddresses.Remove(userAddress);
+            await db.SaveChangesAsync();
+
             return NoContent();
         }
     }
