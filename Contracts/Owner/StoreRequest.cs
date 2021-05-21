@@ -6,9 +6,8 @@ namespace Delivery.Contracts.Owner
     public class StoreRequest
     {
         public string title { get; set; }
-        public StoreAddress address { get; set; }
+        public long address_id { get; set; }
         public IEnumerable<string> categories { get; set; }
-        public WorkingHours working_hours { get; set; }
     }
 
     public class StoreAddress

@@ -94,6 +94,7 @@ namespace Delivery.Controllers
                                                         && o.Status.Name == "Заказ доставлен"),
                 address = new
                 {
+                    id = address.a.Id,
                     locality = address.Locality,
                     street = address.a.Street,
                     building_number = address.a.Building,
@@ -200,29 +201,29 @@ namespace Delivery.Controllers
         [HttpPost("store")]
         public async Task<IActionResult> AddStore([FromBody] StoreRequest request)
         {
-            var address = await db.Addresses
-                .Include(a => a.Locality)
-                .FirstOrDefaultAsync(a => a.Locality.Name == request.address.locality
-                                          && a.Street == request.address.street
-                                          && a.Building == request.address.building
-                                          && a.Apartment == request.address.apartment
-                                          && a.Entrance == request.address.entrance
-                                          && a.Level == request.address.level);
-
-            if (address == null)
-            {
-                address = new Address
-                {
-                    Locality = db.Localities.FirstOrDefault(l => l.Name == request.address.locality),
-                    Street = request.address.street,
-                    Building = request.address.building,
-                    Apartment = request.address.apartment,
-                    Entrance = request.address.entrance,
-                    Level = request.address.level
-                };
-                await db.AddAsync(address);
-                await db.SaveChangesAsync();
-            }
+            // var address = await db.Addresses
+            //     .Include(a => a.Locality)
+            //     .FirstOrDefaultAsync(a => a.Locality.Name == request.address.locality
+            //                               && a.Street == request.address.street
+            //                               && a.Building == request.address.building
+            //                               && a.Apartment == request.address.apartment
+            //                               && a.Entrance == request.address.entrance
+            //                               && a.Level == request.address.level);
+            //
+            // if (address == null)
+            // {
+            //     address = new Address
+            //     {
+            //         Locality = db.Localities.FirstOrDefault(l => l.Name == request.address.locality),
+            //         Street = request.address.street,
+            //         Building = request.address.building,
+            //         Apartment = request.address.apartment,
+            //         Entrance = request.address.entrance,
+            //         Level = request.address.level
+            //     };
+            //     await db.AddAsync(address);
+            //     await db.SaveChangesAsync();
+            // }
 
             var categories = db.CategoryStores
                 .Where(cs => request.categories.Contains(cs.Title))
@@ -231,9 +232,9 @@ namespace Delivery.Controllers
             var store = new Store
             {
                 Title = request.title,
-                BeginWorking = request.working_hours.begin,
-                EndWorking = request.working_hours.end,
-                Address = address,
+                BeginWorking = TimeSpan.FromHours(10),
+                EndWorking = TimeSpan.FromHours(20),
+                AddressId = request.address_id,
                 StoreStatus = db.StoreStatuses.FirstOrDefault(s => s.Name == "Рассматривается"),
                 OwnerLogin = User.Identity?.Name
             };
@@ -276,29 +277,29 @@ namespace Delivery.Controllers
                 return Forbid();
             }
             
-            var address = await db.Addresses
-                .Include(a => a.Locality)
-                .FirstOrDefaultAsync(a => a.Locality.Name == request.address.locality
-                                          && a.Street == request.address.street
-                                          && a.Building == request.address.building
-                                          && a.Apartment == request.address.apartment
-                                          && a.Entrance == request.address.entrance
-                                          && a.Level == request.address.level);
-
-            if (address == null)
-            {
-                address = new Address
-                {
-                    Locality = db.Localities.FirstOrDefault(l => l.Name == request.address.locality),
-                    Street = request.address.street,
-                    Building = request.address.building,
-                    Apartment = request.address.apartment,
-                    Entrance = request.address.entrance,
-                    Level = request.address.level
-                };
-                await db.AddAsync(address);
-                await db.SaveChangesAsync();
-            }
+            // var address = await db.Addresses
+            //     .Include(a => a.Locality)
+            //     .FirstOrDefaultAsync(a => a.Locality.Name == request.address.locality
+            //                               && a.Street == request.address.street
+            //                               && a.Building == request.address.building
+            //                               && a.Apartment == request.address.apartment
+            //                               && a.Entrance == request.address.entrance
+            //                               && a.Level == request.address.level);
+            //
+            // if (address == null)
+            // {
+            //     address = new Address
+            //     {
+            //         Locality = db.Localities.FirstOrDefault(l => l.Name == request.address.locality),
+            //         Street = request.address.street,
+            //         Building = request.address.building,
+            //         Apartment = request.address.apartment,
+            //         Entrance = request.address.entrance,
+            //         Level = request.address.level
+            //     };
+            //     await db.AddAsync(address);
+            //     await db.SaveChangesAsync();
+            // }
 
             var categories = db.CategoryStores
                 .Where(cs => request.categories.Contains(cs.Title))
@@ -314,9 +315,7 @@ namespace Delivery.Controllers
                 !categories.Contains(c));
 
             store.Title = request.title;
-            store.BeginWorking = request.working_hours.begin;
-            store.EndWorking = request.working_hours.end;
-            store.Address = address;
+            store.AddressId = request.address_id;
 
             db.StoreCategories.RemoveRange(oldCategories.Select(c => new StoreCategory
             {

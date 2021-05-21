@@ -171,6 +171,21 @@ namespace Delivery.Controllers
             return Ok();
         }
 
+        [AuthorizeByLogin]
+        [HttpPut("{login}/maininfo")]
+        public async Task<IActionResult> ChangeMainInfoUser([FromRoute] string login, [FromBody] UserMainInfo userMainInfo)
+        {
+            var user = await db.Users.FirstOrDefaultAsync(u => u.Login == login);
+            user.FirstName = userMainInfo.first_name;
+            user.LastName = userMainInfo.last_name;
+            user.MiddleName = userMainInfo.middle_name;
+            user.Phone = userMainInfo.phone;
+
+            await db.SaveChangesAsync();
+
+            return Ok();
+        }
+
         /// <summary>
         /// Удаляет пользователя
         /// </summary>

@@ -48,6 +48,7 @@ namespace Delivery.Controllers
                                 .Average(r => r.Rating1), 2)
                             .ToString(CultureInfo.CurrentCulture)
                         : null,
+                    description = s.Description,
                     status = db.StoreStatuses.FirstOrDefault(ss => ss.Id == s.StoreStatusId).Name
                 });
 
@@ -137,7 +138,8 @@ namespace Delivery.Controllers
                     id = p.Id,
                     title = p.Title,
                     price = p.Price,
-                    weight = p.Weight
+                    weight = p.Weight,
+                    store_id = p.StoreId,
                 }).ToListAsync();
 
             return Ok(response);
@@ -167,6 +169,7 @@ namespace Delivery.Controllers
                 title = storeItem.Title,
                 price = storeItem.Price,
                 weight = storeItem.Weight,
+                store_id = storeItem.StoreId,
                 store_title = storeItem.Store.Title
             };
             
