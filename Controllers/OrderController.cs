@@ -67,6 +67,8 @@ namespace Delivery.Controllers
             
             var response = new
             {
+                id = order.Id,
+                store_id = order.Store.Id,
                 store_title = order.Store.Title,
                 order_status = order.Status.Name,
                 date_order = order.OrderDate,
