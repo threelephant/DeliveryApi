@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
 using System.Threading.Tasks;
@@ -297,6 +298,30 @@ namespace Delivery.Controllers
                     id = sc.StoreId,
                     title = sc.Store.Title,
                 });
+
+            return Ok(stores);
+        }
+
+        [HttpPost]
+        [Route("search/stores")]
+        public async Task<IActionResult> GetStoresByProducts([FromBody] List<string> products)
+        {
+            var productsEntities = new List<Product>();
+            foreach (var product in products)
+            {
+                var productEntity = db.Products
+                    .Where(p => p.Title.ToLower().Contains(product.ToLower()));
+                productsEntities.AddRange(productEntity);
+            }
+
+            var stores = productsEntities.GroupBy(p => p.StoreId).Select(g => new
+            {
+                store_id = g.Key,
+                store_title = db.Stores.FirstOrDefault(s => s.Id == g.Key)?.Title,
+                count = g.Count(),
+            })
+                .OrderBy(s => s.count);
+
 
             return Ok(stores);
         }

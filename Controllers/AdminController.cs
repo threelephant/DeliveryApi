@@ -113,7 +113,7 @@ namespace Delivery.Controllers
         /// <param name="order">Сортировка</param>
         /// <response code="200">Список предприятий-кандидатов</response>
         [HttpGet("store/candidate")]
-        public async Task<IActionResult> GetStoresCandidate([FromRoute] string city, string order)
+        public async Task<IActionResult> GetStoresCandidate()
         {
             var stores = db.Stores
                 .Include(s => s.Address)
@@ -192,7 +192,7 @@ namespace Delivery.Controllers
             }
 
             courier.WorkStatus = await db.WorkCourierStatuses
-                .FirstOrDefaultAsync(s => s.Name == "Отклонено");
+                .FirstOrDefaultAsync(s => s.Name == "Увольнение");
             
             await db.SaveChangesAsync();
             return Ok();

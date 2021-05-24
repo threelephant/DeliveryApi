@@ -27,7 +27,23 @@ namespace Delivery.Controllers
         {
             this.db = db;
         }
-        
+
+        [AuthorizeByLogin]
+        [HttpGet("{login}/role")]
+        public async Task<IActionResult> GetRole(string login)
+        {
+            var user = await db.Users
+                .Include(u => u.Role)
+                .FirstOrDefaultAsync(u => u.Login == login);
+
+            return Ok(new
+                {
+                    login = user.Login,
+                    role = user.Role.Name,
+                }
+            );
+        }
+
         /// <summary>
         /// Возвращает информацию о пользователе
         /// </summary>
